@@ -10,7 +10,6 @@ import { HiPhone, HiMail } from "react-icons/hi";
 
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { PhoneInput } from "@/components/ui/PhoneInput";
 import { OtpInput } from "@/components/ui/OtpInput";
 import {
   Card,
@@ -318,14 +317,32 @@ export default function LoginPage() {
                   onSubmit={phoneStepForm.handleSubmit(handlePhoneStart)}
                   className="space-y-4"
                 >
-                  <PhoneInput
+                  <Input
                     label="Phone Number"
+                    type="tel"
+                    placeholder="8808555545 or +918808555545"
                     {...phoneStepForm.register("phone", {
                       required: "Phone number is required",
-                      pattern: {
-                        value: /^\+[1-9]\d{10,14}$/,
-                        message:
-                          "Please enter a valid international phone number",
+                      validate: (value) => {
+                        // Remove all non-digits except the leading +
+                        let cleanNumber = value.replace(/[^\d+]/g, "");
+
+                        // Auto-add +91 if number starts with digits (assume Indian number)
+                        if (/^\d{10}$/.test(cleanNumber)) {
+                          cleanNumber = "+91" + cleanNumber;
+                        }
+
+                        // Check if it matches international format: +[country code][number]
+                        if (!/^\+[1-9]\d{7,14}$/.test(cleanNumber)) {
+                          return "Please enter phone with country code (e.g., +918808555545) or just 10 digits for India";
+                        }
+
+                        // Update the form value with the clean number
+                        if (cleanNumber !== value) {
+                          phoneStepForm.setValue("phone", cleanNumber);
+                        }
+
+                        return true;
                       },
                     })}
                     error={phoneStepForm.formState.errors.phone?.message}

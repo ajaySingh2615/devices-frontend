@@ -10,6 +10,7 @@ import { HiPhone, HiMail } from "react-icons/hi";
 
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { OtpInput } from "@/components/ui/OtpInput";
 import {
   Card,
   CardContent,
@@ -31,19 +32,25 @@ interface RegisterFormData {
 }
 
 interface PhoneFormData {
-  name: string;
   phone: string;
   otp: string;
+}
+
+interface PhoneStepData {
+  phone: string;
 }
 
 export default function RegisterPage() {
   const [registerMethod, setRegisterMethod] = useState<RegisterMethod>("email");
   const [isLoading, setIsLoading] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
+  const [currentPhone, setCurrentPhone] = useState("");
+  const [otpValue, setOtpValue] = useState("");
+  const [countdown, setCountdown] = useState(0);
   const router = useRouter();
 
   const emailForm = useForm<RegisterFormData>();
-  const phoneForm = useForm<PhoneFormData>();
+  const phoneStepForm = useForm<PhoneStepData>();
 
   const {
     renderGoogleButton,
@@ -60,6 +67,17 @@ export default function RegisterPage() {
       setTimeout(() => renderGoogleButton("google-register-button"), 100);
     }
   }, [registerMethod, isGoogleLoaded, renderGoogleButton]);
+
+  // Countdown timer for resend OTP
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (countdown > 0) {
+      interval = setInterval(() => {
+        setCountdown((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [countdown]);
 
   const handleEmailRegister = async (data: RegisterFormData) => {
     if (data.password !== data.confirmPassword) {
@@ -90,25 +108,32 @@ export default function RegisterPage() {
     toast("Please use the Google button above", { icon: "ℹ️" });
   };
 
-  const handlePhoneStart = async (data: { name: string; phone: string }) => {
+  const handlePhoneStart = async (data: PhoneStepData) => {
     setIsLoading(true);
     try {
       await authApi.phoneStart({ phone: data.phone });
+      setCurrentPhone(data.phone);
       setOtpSent(true);
-      toast.success("OTP sent to your phone");
-    } catch (error) {
+      setCountdown(60); // 60-second cooldown
+      toast.success("OTP sent to your phone! Check your messages.");
+    } catch (error: any) {
       console.error("Phone OTP failed:", error);
+      const errorMessage =
+        error.response?.data?.message || "Failed to send OTP";
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handlePhoneVerify = async (data: PhoneFormData) => {
+  const handleOtpComplete = async (otp: string) => {
+    if (otp.length !== 6) return;
+
     setIsLoading(true);
     try {
       const response = await authApi.phoneVerify({
-        phone: data.phone,
-        otp: data.otp,
+        phone: currentPhone,
+        otp: otp,
       });
       setTokens(response.accessToken, response.refreshToken);
       toast.success("Account created successfully!");
@@ -130,9 +155,34 @@ export default function RegisterPage() {
       }
 
       toast.error(errorMessage);
+      setOtpValue(""); // Clear OTP on error
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleResendOtp = async () => {
+    if (countdown > 0) return;
+
+    setIsLoading(true);
+    try {
+      await authApi.phoneStart({ phone: currentPhone });
+      setCountdown(60);
+      setOtpValue(""); // Clear current OTP
+      toast.success("New OTP sent!");
+    } catch (error: any) {
+      console.error("Resend OTP failed:", error);
+      toast.error("Failed to resend OTP");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleBackToPhone = () => {
+    setOtpSent(false);
+    setOtpValue("");
+    setCurrentPhone("");
+    setCountdown(0);
   };
 
   return (
@@ -333,99 +383,147 @@ export default function RegisterPage() {
 
         {/* Phone Registration */}
         {registerMethod === "phone" && (
-          <div className="space-y-4">
+          <div className="space-y-6">
             {!otpSent ? (
-              <form
-                onSubmit={phoneForm.handleSubmit(handlePhoneStart)}
-                className="space-y-4"
-              >
-                <Input
-                  label="Full Name"
-                  type="text"
-                  placeholder="Enter your full name"
-                  {...phoneForm.register("name", {
-                    required: "Name is required",
-                    minLength: {
-                      value: 2,
-                      message: "Name must be at least 2 characters",
-                    },
-                  })}
-                  error={phoneForm.formState.errors.name?.message}
-                />
-
-                <Input
-                  label="Phone Number"
-                  type="tel"
-                  placeholder="+1 (555) 123-4567"
-                  {...phoneForm.register("phone", {
-                    required: "Phone number is required",
-                  })}
-                  error={phoneForm.formState.errors.phone?.message}
-                />
-
-                <div className="text-sm text-foreground-muted">
-                  <label className="flex items-start gap-2">
-                    <input
-                      type="checkbox"
-                      className="mt-1 rounded border-border"
-                      required
-                    />
-                    <span>
-                      I agree to the{" "}
-                      <Link
-                        href="/terms"
-                        className="text-primary hover:text-primary-dark"
-                      >
-                        Terms of Service
-                      </Link>{" "}
-                      and{" "}
-                      <Link
-                        href="/privacy"
-                        className="text-primary hover:text-primary-dark"
-                      >
-                        Privacy Policy
-                      </Link>
-                    </span>
-                  </label>
+              /* Step 1: Phone Number Input */
+              <div className="space-y-4">
+                <div className="text-center text-foreground-muted mb-4">
+                  <p>Enter your phone number to create an account</p>
                 </div>
 
-                <Button type="submit" className="w-full" loading={isLoading}>
-                  Send OTP
-                </Button>
-              </form>
-            ) : (
-              <form
-                onSubmit={phoneForm.handleSubmit(handlePhoneVerify)}
-                className="space-y-4"
-              >
-                <Input
-                  label="Enter OTP"
-                  type="text"
-                  placeholder="123456"
-                  maxLength={6}
-                  {...phoneForm.register("otp", {
-                    required: "OTP is required",
-                    pattern: {
-                      value: /^\d{6}$/,
-                      message: "OTP must be 6 digits",
-                    },
-                  })}
-                  error={phoneForm.formState.errors.otp?.message}
-                />
-                <div className="flex gap-2">
+                <form
+                  onSubmit={phoneStepForm.handleSubmit(handlePhoneStart)}
+                  className="space-y-4"
+                >
+                  <Input
+                    label="Phone Number"
+                    type="tel"
+                    placeholder="8808555545 or +918808555545"
+                    {...phoneStepForm.register("phone", {
+                      required: "Phone number is required",
+                      validate: (value) => {
+                        console.log("🔍 Validating phone:", value);
+
+                        // Remove all non-digits except the leading +
+                        let cleanNumber = value.replace(/[^\d+]/g, "");
+
+                        // Auto-add +91 if number starts with digits (assume Indian number)
+                        if (/^\d{10}$/.test(cleanNumber)) {
+                          cleanNumber = "+91" + cleanNumber;
+                          console.log("🇮🇳 Auto-added +91:", cleanNumber);
+                        }
+
+                        console.log("🧹 Clean number:", cleanNumber);
+
+                        // Check if it matches international format: +[country code][number]
+                        const isValid = /^\+[1-9]\d{7,14}$/.test(cleanNumber);
+                        console.log("✅ Is valid:", isValid);
+
+                        if (!isValid) {
+                          return "Please enter phone with country code (e.g., +918808555545) or just 10 digits for India";
+                        }
+
+                        // Update the form value with the clean number
+                        if (isValid && cleanNumber !== value) {
+                          phoneStepForm.setValue("phone", cleanNumber);
+                        }
+
+                        return true;
+                      },
+                    })}
+                    error={phoneStepForm.formState.errors.phone?.message}
+                  />
+
+                  <div className="text-sm text-foreground-muted">
+                    <label className="flex items-start gap-2">
+                      <input
+                        type="checkbox"
+                        className="mt-1 rounded border-border"
+                        required
+                      />
+                      <span>
+                        I agree to the{" "}
+                        <Link
+                          href="/terms"
+                          className="text-primary hover:text-primary-dark"
+                        >
+                          Terms of Service
+                        </Link>{" "}
+                        and{" "}
+                        <Link
+                          href="/privacy"
+                          className="text-primary hover:text-primary-dark"
+                        >
+                          Privacy Policy
+                        </Link>
+                      </span>
+                    </label>
+                  </div>
+
                   <Button
-                    type="button"
-                    variant="outline"
-                    className="flex-1"
-                    onClick={() => setOtpSent(false)}
+                    type="submit"
+                    className="w-full"
+                    loading={isLoading}
+                    disabled={isLoading}
                   >
-                    Back
+                    {isLoading ? "Sending..." : "Send Verification Code"}
                   </Button>
-                  <Button type="submit" className="flex-1" loading={isLoading}>
-                    Verify & Create Account
-                  </Button>
+                </form>
+              </div>
+            ) : (
+              /* Step 2: OTP Verification */
+              <div className="space-y-6">
+                <div className="text-center">
+                  <h3 className="text-lg font-medium mb-2">
+                    Verify Your Phone
+                  </h3>
+                  <p className="text-sm text-foreground-muted">
+                    Enter the 6-digit code sent to{" "}
+                    <span className="font-medium text-foreground">
+                      {currentPhone}
+                    </span>
+                  </p>
                 </div>
-              </form>
+
+                <OtpInput
+                  value={otpValue}
+                  onChange={setOtpValue}
+                  onComplete={handleOtpComplete}
+                  disabled={isLoading}
+                />
+
+                {/* Resend OTP */}
+                <div className="text-center">
+                  {countdown > 0 ? (
+                    <p className="text-sm text-foreground-muted">
+                      Resend code in{" "}
+                      <span className="font-medium text-primary">
+                        {countdown}s
+                      </span>
+                    </p>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleResendOtp}
+                      disabled={isLoading}
+                      className="text-sm text-primary hover:text-primary-dark disabled:opacity-50"
+                    >
+                      Resend verification code
+                    </button>
+                  )}
+                </div>
+
+                {/* Back button */}
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={handleBackToPhone}
+                  disabled={isLoading}
+                >
+                  ← Use different phone number
+                </Button>
+              </div>
             )}
           </div>
         )}

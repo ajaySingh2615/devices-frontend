@@ -53,7 +53,9 @@ export const PhoneInput = forwardRef<HTMLInputElement, PhoneInputProps>(
 
     const validatePhoneNumber = (phone: string) => {
       const digits = phone.replace(/\D/g, "");
-      return digits.length >= 10 && digits.length <= 15;
+      // Allow 7-15 digits (accommodates various international formats)
+      // 7: Some small countries, 15: ITU-T E.164 maximum
+      return digits.length >= 7 && digits.length <= 15;
     };
 
     const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
