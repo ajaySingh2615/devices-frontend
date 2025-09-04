@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -18,6 +18,7 @@ import {
   CardTitle,
 } from "@/components/ui/Card";
 import { authApi, setTokens, LoginRequest } from "@/lib/api";
+import { useGoogleAuth } from "@/hooks/useGoogleAuth";
 
 type LoginMethod = "email" | "google" | "phone";
 
@@ -40,6 +41,22 @@ export default function LoginPage() {
   const emailForm = useForm<LoginFormData>();
   const phoneForm = useForm<PhoneFormData>();
 
+  const {
+    renderGoogleButton,
+    isLoading: googleLoading,
+    isGoogleLoaded,
+  } = useGoogleAuth({
+    onSuccess: () => router.push("/dashboard"),
+    onError: (error) => toast.error(error),
+  });
+
+  // Render Google button when method changes to google
+  useEffect(() => {
+    if (loginMethod === "google" && isGoogleLoaded) {
+      setTimeout(() => renderGoogleButton("google-signin-button"), 100);
+    }
+  }, [loginMethod, isGoogleLoaded, renderGoogleButton]);
+
   const handleEmailLogin = async (data: LoginFormData) => {
     setIsLoading(true);
     try {
@@ -54,18 +71,9 @@ export default function LoginPage() {
     }
   };
 
-  const handleGoogleLogin = async () => {
-    setIsLoading(true);
-    try {
-      // This would integrate with Google Sign-In
-      toast.error(
-        "Google Sign-In will be implemented with the Google Identity Services SDK"
-      );
-    } catch (error) {
-      console.error("Google login failed:", error);
-    } finally {
-      setIsLoading(false);
-    }
+  const handleGoogleLogin = () => {
+    // Google sign-in is now handled by the rendered button
+    toast("Please use the Google button above", { icon: "ℹ️" });
   };
 
   const handlePhoneStart = async (data: { phone: string }) => {
@@ -207,16 +215,25 @@ export default function LoginPage() {
             <div className="text-center text-foreground-muted">
               <p className="mb-4">Sign in with your Google account</p>
             </div>
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full"
-              onClick={handleGoogleLogin}
-              loading={isLoading}
-            >
-              <FcGoogle className="w-5 h-5" />
-              Continue with Google
-            </Button>
+
+            {/* Google-rendered button */}
+            <div className="w-full flex justify-center">
+              <div id="google-signin-button"></div>
+            </div>
+
+            {/* Fallback custom button if Google button doesn't load */}
+            {!isGoogleLoaded && (
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={handleGoogleLogin}
+                loading={googleLoading}
+              >
+                <FcGoogle className="w-5 h-5" />
+                Continue with Google
+              </Button>
+            )}
           </div>
         )}
 

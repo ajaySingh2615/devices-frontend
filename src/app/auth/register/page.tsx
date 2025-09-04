@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -18,6 +18,7 @@ import {
   CardTitle,
 } from "@/components/ui/Card";
 import { authApi, setTokens, RegisterRequest } from "@/lib/api";
+import { useGoogleAuth } from "@/hooks/useGoogleAuth";
 
 type RegisterMethod = "email" | "google" | "phone";
 
@@ -44,6 +45,22 @@ export default function RegisterPage() {
   const emailForm = useForm<RegisterFormData>();
   const phoneForm = useForm<PhoneFormData>();
 
+  const {
+    renderGoogleButton,
+    isLoading: googleLoading,
+    isGoogleLoaded,
+  } = useGoogleAuth({
+    onSuccess: () => router.push("/dashboard"),
+    onError: (error) => toast.error(error),
+  });
+
+  // Render Google button when method changes to google
+  useEffect(() => {
+    if (registerMethod === "google" && isGoogleLoaded) {
+      setTimeout(() => renderGoogleButton("google-register-button"), 100);
+    }
+  }, [registerMethod, isGoogleLoaded, renderGoogleButton]);
+
   const handleEmailRegister = async (data: RegisterFormData) => {
     if (data.password !== data.confirmPassword) {
       toast.error("Passwords do not match");
@@ -68,18 +85,9 @@ export default function RegisterPage() {
     }
   };
 
-  const handleGoogleRegister = async () => {
-    setIsLoading(true);
-    try {
-      // This would integrate with Google Sign-In
-      toast.error(
-        "Google Sign-In will be implemented with the Google Identity Services SDK"
-      );
-    } catch (error) {
-      console.error("Google registration failed:", error);
-    } finally {
-      setIsLoading(false);
-    }
+  const handleGoogleRegister = () => {
+    // Google sign-in is now handled by the rendered button
+    toast("Please use the Google button above", { icon: "ℹ️" });
   };
 
   const handlePhoneStart = async (data: { name: string; phone: string }) => {
@@ -270,16 +278,25 @@ export default function RegisterPage() {
             <div className="text-center text-foreground-muted">
               <p className="mb-4">Create account with your Google account</p>
             </div>
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full"
-              onClick={handleGoogleRegister}
-              loading={isLoading}
-            >
-              <FcGoogle className="w-5 h-5" />
-              Continue with Google
-            </Button>
+
+            {/* Google-rendered button */}
+            <div className="w-full flex justify-center">
+              <div id="google-register-button"></div>
+            </div>
+
+            {/* Fallback custom button if Google button doesn't load */}
+            {!isGoogleLoaded && (
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={handleGoogleRegister}
+                loading={googleLoading}
+              >
+                <FcGoogle className="w-5 h-5" />
+                Continue with Google
+              </Button>
+            )}
             <div className="text-sm text-foreground-muted text-center">
               By signing up with Google, you agree to our{" "}
               <Link
