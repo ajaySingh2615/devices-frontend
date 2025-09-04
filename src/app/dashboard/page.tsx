@@ -18,27 +18,19 @@ export default function DashboardPage() {
     const fetchUser = async () => {
       try {
         const tokens = getTokens();
-        console.log("Dashboard - Checking tokens:", {
-          hasAccess: !!tokens.accessToken,
-          hasRefresh: !!tokens.refreshToken,
-        });
 
         if (!tokens.accessToken) {
-          console.log("No access token found, redirecting to login");
           router.push("/auth/login");
           return;
         }
 
-        console.log("Attempting to fetch user profile...");
         const userData = await userApi.getProfile();
-        console.log("User profile fetched successfully:", userData);
         setUser(userData);
       } catch (error: any) {
         console.error("Failed to fetch user:", error);
 
         // Check if it's a 403 error (unauthorized)
         if (error.response?.status === 403) {
-          console.log("403 error - clearing tokens and redirecting to login");
           clearTokens();
         }
 
