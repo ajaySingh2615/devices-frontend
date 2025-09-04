@@ -1,8 +1,8 @@
 import axios from "axios";
 import { toast } from "react-hot-toast";
 
-// API Base URL
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+// API Base URL - Use Next.js proxy to avoid CORS issues
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
 // Create axios instance
 const api = axios.create({
@@ -78,10 +78,19 @@ let accessToken: string | null = null;
 let refreshToken: string | null = null;
 
 export const setTokens = (access: string, refresh: string) => {
+  console.log(
+    "Setting tokens - Access:",
+    access ? "Token received" : "No access token"
+  );
+  console.log(
+    "Setting tokens - Refresh:",
+    refresh ? "Token received" : "No refresh token"
+  );
   accessToken = access;
   refreshToken = refresh;
   localStorage.setItem("accessToken", access);
   localStorage.setItem("refreshToken", refresh);
+  console.log("Tokens stored in localStorage");
 };
 
 export const getTokens = () => {
@@ -107,6 +116,10 @@ export const clearTokens = () => {
 api.interceptors.request.use(
   (config) => {
     const tokens = getTokens();
+    console.log(
+      "API Request - Access Token:",
+      tokens.accessToken ? "Token exists" : "No token"
+    );
     if (tokens.accessToken) {
       config.headers.Authorization = `Bearer ${tokens.accessToken}`;
     }
