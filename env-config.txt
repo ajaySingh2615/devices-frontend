@@ -1,0 +1,44 @@
+# DeviceHub Frontend Environment Configuration
+# Copy these contents to your .env.local file
+
+# ===========================================
+# API Configuration
+# ===========================================
+NEXT_PUBLIC_API_URL=http://localhost:8080
+
+# ===========================================
+# Google OAuth Configuration
+# ===========================================
+# Replace with your actual Google OAuth client ID from Google Cloud Console
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=705552183192-saonkfh290p4einn3fj092ftltcmq92m.apps.googleusercontent.com
+
+# ===========================================
+# Optional Configuration
+# ===========================================
+# App Environment (development/production)
+NEXT_PUBLIC_APP_ENV=development
+
+# App Name and Version
+NEXT_PUBLIC_APP_NAME=DeviceHub
+NEXT_PUBLIC_APP_VERSION=1.0.0
+
+# ===========================================
+# Instructions:
+# ===========================================
+# 1. Create a file named ".env.local" in the frontend-devices folder
+# 2. Copy all the content above (without the comments if you prefer)
+# 3. Update the NEXT_PUBLIC_GOOGLE_CLIENT_ID with your actual Google OAuth client ID
+# 4. The API URL should match your Spring Boot backend (default: http://localhost:8080)
+# 
+# For Google OAuth setup:
+# 1. Go to Google Cloud Console (https://console.cloud.google.com/)
+# 2. Create a new project or select existing one
+# 3. Enable Google+ API and Google Identity Services
+# 4. Create OAuth 2.0 credentials
+# 5. Add your domain (http://localhost:3000 for development)
+# 6. Copy the client ID and paste it above
+#
+# Example .env.local content:
+# NEXT_PUBLIC_API_URL=http://localhost:8080
+# NEXT_PUBLIC_GOOGLE_CLIENT_ID=your-actual-google-client-id-here
+# NEXT_PUBLIC_APP_ENV=development
