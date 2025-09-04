@@ -10,6 +10,8 @@ import { HiPhone, HiMail } from "react-icons/hi";
 
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { PhoneInput } from "@/components/ui/PhoneInput";
+import { OtpInput } from "@/components/ui/OtpInput";
 import {
   Card,
   CardContent,
@@ -32,14 +34,21 @@ interface PhoneFormData {
   otp: string;
 }
 
+interface PhoneStepData {
+  phone: string;
+}
+
 export default function LoginPage() {
   const [loginMethod, setLoginMethod] = useState<LoginMethod>("email");
   const [isLoading, setIsLoading] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
+  const [currentPhone, setCurrentPhone] = useState("");
+  const [otpValue, setOtpValue] = useState("");
+  const [countdown, setCountdown] = useState(0);
   const router = useRouter();
 
   const emailForm = useForm<LoginFormData>();
-  const phoneForm = useForm<PhoneFormData>();
+  const phoneStepForm = useForm<PhoneStepData>();
 
   const {
     renderGoogleButton,
@@ -56,6 +65,17 @@ export default function LoginPage() {
       setTimeout(() => renderGoogleButton("google-signin-button"), 100);
     }
   }, [loginMethod, isGoogleLoaded, renderGoogleButton]);
+
+  // Countdown timer for resend OTP
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (countdown > 0) {
+      interval = setInterval(() => {
+        setCountdown((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [countdown]);
 
   const handleEmailLogin = async (data: LoginFormData) => {
     setIsLoading(true);
@@ -76,34 +96,81 @@ export default function LoginPage() {
     toast("Please use the Google button above", { icon: "ℹ️" });
   };
 
-  const handlePhoneStart = async (data: { phone: string }) => {
+  const handlePhoneStart = async (data: PhoneStepData) => {
     setIsLoading(true);
     try {
       await authApi.phoneStart({ phone: data.phone });
+      setCurrentPhone(data.phone);
       setOtpSent(true);
-      toast.success("OTP sent to your phone");
-    } catch (error) {
+      setCountdown(60); // 60-second cooldown
+      toast.success("OTP sent to your phone! Check your messages.");
+    } catch (error: any) {
       console.error("Phone OTP failed:", error);
+      const errorMessage =
+        error.response?.data?.message || "Failed to send OTP";
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handlePhoneVerify = async (data: PhoneFormData) => {
+  const handleOtpComplete = async (otp: string) => {
+    if (otp.length !== 6) return;
+
     setIsLoading(true);
     try {
       const response = await authApi.phoneVerify({
-        phone: data.phone,
-        otp: data.otp,
+        phone: currentPhone,
+        otp: otp,
       });
       setTokens(response.accessToken, response.refreshToken);
-      toast.success("Welcome!");
+      toast.success("Welcome! Login successful.");
       router.push("/dashboard");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Phone verification failed:", error);
+
+      // Handle different error types with user-friendly messages
+      let errorMessage = "Invalid OTP. Please try again.";
+
+      if (error.response?.status === 500) {
+        errorMessage = "Authentication failed. Please try again.";
+      } else if (error.response?.status === 400) {
+        errorMessage =
+          error.response?.data?.message ||
+          "Invalid OTP. Please check your code.";
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+
+      toast.error(errorMessage);
+      setOtpValue(""); // Clear OTP on error
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleResendOtp = async () => {
+    if (countdown > 0) return;
+
+    setIsLoading(true);
+    try {
+      await authApi.phoneStart({ phone: currentPhone });
+      setCountdown(60);
+      setOtpValue(""); // Clear current OTP
+      toast.success("New OTP sent!");
+    } catch (error: any) {
+      console.error("Resend OTP failed:", error);
+      toast.error("Failed to resend OTP");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleBackToPhone = () => {
+    setOtpSent(false);
+    setOtpValue("");
+    setCurrentPhone("");
+    setCountdown(0);
   };
 
   return (
@@ -239,58 +306,95 @@ export default function LoginPage() {
 
         {/* Phone Login */}
         {loginMethod === "phone" && (
-          <div className="space-y-4">
+          <div className="space-y-6">
             {!otpSent ? (
-              <form
-                onSubmit={phoneForm.handleSubmit(handlePhoneStart)}
-                className="space-y-4"
-              >
-                <Input
-                  label="Phone Number"
-                  type="tel"
-                  placeholder="+1 (555) 123-4567"
-                  {...phoneForm.register("phone", {
-                    required: "Phone number is required",
-                  })}
-                  error={phoneForm.formState.errors.phone?.message}
-                />
-                <Button type="submit" className="w-full" loading={isLoading}>
-                  Send OTP
-                </Button>
-              </form>
-            ) : (
-              <form
-                onSubmit={phoneForm.handleSubmit(handlePhoneVerify)}
-                className="space-y-4"
-              >
-                <Input
-                  label="Enter OTP"
-                  type="text"
-                  placeholder="123456"
-                  maxLength={6}
-                  {...phoneForm.register("otp", {
-                    required: "OTP is required",
-                    pattern: {
-                      value: /^\d{6}$/,
-                      message: "OTP must be 6 digits",
-                    },
-                  })}
-                  error={phoneForm.formState.errors.otp?.message}
-                />
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="flex-1"
-                    onClick={() => setOtpSent(false)}
-                  >
-                    Back
-                  </Button>
-                  <Button type="submit" className="flex-1" loading={isLoading}>
-                    Verify OTP
-                  </Button>
+              /* Step 1: Phone Number Input */
+              <div className="space-y-4">
+                <div className="text-center text-foreground-muted mb-4">
+                  <p>Enter your phone number to receive a verification code</p>
                 </div>
-              </form>
+
+                <form
+                  onSubmit={phoneStepForm.handleSubmit(handlePhoneStart)}
+                  className="space-y-4"
+                >
+                  <PhoneInput
+                    label="Phone Number"
+                    {...phoneStepForm.register("phone", {
+                      required: "Phone number is required",
+                      pattern: {
+                        value: /^\+[1-9]\d{10,14}$/,
+                        message:
+                          "Please enter a valid international phone number",
+                      },
+                    })}
+                    error={phoneStepForm.formState.errors.phone?.message}
+                  />
+
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    loading={isLoading}
+                    disabled={isLoading}
+                  >
+                    {isLoading ? "Sending..." : "Send Verification Code"}
+                  </Button>
+                </form>
+              </div>
+            ) : (
+              /* Step 2: OTP Verification */
+              <div className="space-y-6">
+                <div className="text-center">
+                  <h3 className="text-lg font-medium mb-2">
+                    Verify Your Phone
+                  </h3>
+                  <p className="text-sm text-foreground-muted">
+                    Enter the 6-digit code sent to{" "}
+                    <span className="font-medium text-foreground">
+                      {currentPhone}
+                    </span>
+                  </p>
+                </div>
+
+                <OtpInput
+                  value={otpValue}
+                  onChange={setOtpValue}
+                  onComplete={handleOtpComplete}
+                  disabled={isLoading}
+                />
+
+                {/* Resend OTP */}
+                <div className="text-center">
+                  {countdown > 0 ? (
+                    <p className="text-sm text-foreground-muted">
+                      Resend code in{" "}
+                      <span className="font-medium text-primary">
+                        {countdown}s
+                      </span>
+                    </p>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleResendOtp}
+                      disabled={isLoading}
+                      className="text-sm text-primary hover:text-primary-dark disabled:opacity-50"
+                    >
+                      Resend verification code
+                    </button>
+                  )}
+                </div>
+
+                {/* Back button */}
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={handleBackToPhone}
+                  disabled={isLoading}
+                >
+                  ← Use different phone number
+                </Button>
+              </div>
             )}
           </div>
         )}

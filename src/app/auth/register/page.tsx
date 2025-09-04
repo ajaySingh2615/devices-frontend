@@ -113,8 +113,23 @@ export default function RegisterPage() {
       setTokens(response.accessToken, response.refreshToken);
       toast.success("Account created successfully!");
       router.push("/dashboard");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Phone verification failed:", error);
+
+      // Handle different error types with user-friendly messages
+      let errorMessage = "Invalid OTP. Please try again.";
+
+      if (error.response?.status === 500) {
+        errorMessage = "Registration failed. Please try again.";
+      } else if (error.response?.status === 400) {
+        errorMessage =
+          error.response?.data?.message ||
+          "Invalid OTP. Please check your code.";
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
