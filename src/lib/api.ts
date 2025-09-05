@@ -227,6 +227,154 @@ export const userApi = {
   },
 };
 
+// Catalog Types
+export interface Category {
+  id: string;
+  parentId?: string;
+  name: string;
+  slug: string;
+  description?: string;
+  isActive: boolean;
+  sortOrder: number;
+  createdAt: string;
+  children?: Category[];
+}
+
+export interface Brand {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  logoUrl?: string;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface Product {
+  id: string;
+  categoryId: string;
+  brandId: string;
+  title: string;
+  slug: string;
+  description?: string;
+  conditionGrade: "A" | "B" | "C";
+  warrantyMonths: number;
+  isActive: boolean;
+  createdAt: string;
+  category?: Category;
+  brand?: Brand;
+  variants?: ProductVariant[];
+  images?: Media[];
+}
+
+export interface ProductVariant {
+  id: string;
+  productId: string;
+  sku: string;
+  mpn?: string;
+  color?: string;
+  storageGb?: number;
+  ramGb?: number;
+  priceMrp: number;
+  priceSale: number;
+  taxRate: number;
+  weightGrams: number;
+  isActive: boolean;
+  createdAt: string;
+  inventory?: Inventory;
+}
+
+export interface Inventory {
+  variantId: string;
+  quantity: number;
+  safetyStock: number;
+  reserved: number;
+  available: number;
+  inStock: boolean;
+  lowStock: boolean;
+}
+
+export interface Media {
+  id: string;
+  url: string;
+  type: "IMAGE" | "VIDEO" | "DOCUMENT";
+  alt?: string;
+  sortOrder: number;
+}
+
+export interface PageResponse<T> {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  size: number;
+  number: number;
+  first: boolean;
+  last: boolean;
+}
+
+export interface ProductSearchParams {
+  page?: number;
+  size?: number;
+  sort?: string;
+  direction?: "asc" | "desc";
+  q?: string;
+  category?: string;
+  brand?: string;
+  condition?: string;
+  minPrice?: number;
+  maxPrice?: number;
+}
+
+// Catalog API
+export const catalogApi = {
+  // Categories
+  getCategories: async (): Promise<Category[]> => {
+    const response = await api.get("/api/v1/categories");
+    return response.data;
+  },
+
+  getCategoryTree: async (): Promise<Category[]> => {
+    const response = await api.get("/api/v1/categories/tree");
+    return response.data;
+  },
+
+  getCategoryBySlug: async (slug: string): Promise<Category> => {
+    const response = await api.get(`/api/v1/categories/${slug}`);
+    return response.data;
+  },
+
+  // Brands
+  getBrands: async (): Promise<Brand[]> => {
+    const response = await api.get("/api/v1/brands");
+    return response.data;
+  },
+
+  getBrandBySlug: async (slug: string): Promise<Brand> => {
+    const response = await api.get(`/api/v1/brands/${slug}`);
+    return response.data;
+  },
+
+  // Products
+  searchProducts: async (
+    params: ProductSearchParams
+  ): Promise<PageResponse<Product>> => {
+    const searchParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        searchParams.append(key, value.toString());
+      }
+    });
+
+    const response = await api.get(`/api/v1/products?${searchParams}`);
+    return response.data;
+  },
+
+  getProductBySlug: async (slug: string): Promise<Product> => {
+    const response = await api.get(`/api/v1/products/${slug}`);
+    return response.data;
+  },
+};
+
 // Health check API
 export const healthApi = {
   check: async () => {

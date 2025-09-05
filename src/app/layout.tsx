@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Plus_Jakarta_Sans, JetBrains_Mono } from "next/font/google";
 import { Toaster } from "react-hot-toast";
+import Navigation from "@/components/layout/Navigation";
 import "./globals.css";
 
 const inter = Inter({
@@ -44,6 +45,7 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${plusJakarta.variable} ${jetbrainsMono.variable} antialiased`}
       >
+        <Navigation />
         {children}
         <Toaster
           position="top-right"

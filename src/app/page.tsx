@@ -1,35 +1,49 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { HiShoppingBag, HiShieldCheck, HiTruck, HiStar } from "react-icons/hi";
+import {
+  HiShoppingBag,
+  HiShieldCheck,
+  HiTruck,
+  HiStar,
+  HiArrowRight,
+  HiRefresh,
+} from "react-icons/hi";
 import { Button } from "@/components/ui/Button";
+import { Card, CardContent } from "@/components/ui/Card";
+import { catalogApi, Category, Product } from "@/lib/api";
 
 export default function Home() {
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadHomeData();
+  }, []);
+
+  const loadHomeData = async () => {
+    try {
+      const [categoriesData, productsData] = await Promise.all([
+        catalogApi.getCategories(),
+        catalogApi.searchProducts({
+          size: 8,
+          sort: "createdAt",
+          direction: "desc",
+        }),
+      ]);
+
+      setCategories(categoriesData);
+      setFeaturedProducts(productsData.content);
+    } catch (error) {
+      console.error("Failed to load home data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border bg-surface">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
-                <span className="text-lg font-bold text-primary">D</span>
-              </div>
-              <span className="text-xl font-bold font-display text-foreground">
-                DeviceHub
-              </span>
-            </div>
-
-            <div className="flex items-center gap-4">
-              <Link href="/auth/login">
-                <Button variant="ghost">Sign In</Button>
-              </Link>
-              <Link href="/auth/register">
-                <Button>Get Started</Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </header>
-
       {/* Hero Section */}
       <section className="relative py-20 bg-gradient-to-br from-background via-background-secondary to-background-tertiary">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5" />
@@ -136,6 +150,129 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Categories Section */}
+      <section className="py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold font-display text-foreground mb-4">
+              Shop by Category
+            </h2>
+            <p className="text-foreground-secondary max-w-2xl mx-auto">
+              Discover our wide range of refurbished electronics across
+              different categories
+            </p>
+          </div>
+
+          {loading ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Card key={i} className="animate-pulse">
+                  <CardContent className="p-6 text-center">
+                    <div className="w-16 h-16 bg-background-secondary rounded-full mx-auto mb-4" />
+                    <div className="h-4 bg-background-secondary rounded mb-2" />
+                    <div className="h-3 bg-background-secondary rounded w-2/3 mx-auto" />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+              {categories.map((category) => (
+                <Link
+                  key={category.id}
+                  href={`/products?category=${category.slug}`}
+                >
+                  <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+                    <CardContent className="p-6 text-center">
+                      <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <span className="text-2xl">
+                          {getCategoryIcon(category.slug)}
+                        </span>
+                      </div>
+                      <h3 className="font-semibold text-foreground mb-1">
+                        {category.name}
+                      </h3>
+                      <p className="text-sm text-foreground-secondary">
+                        View Collection
+                      </p>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Featured Products */}
+      <section className="py-16 bg-surface">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center mb-12">
+            <div>
+              <h2 className="text-3xl font-bold font-display text-foreground mb-2">
+                Featured Products
+              </h2>
+              <p className="text-foreground-secondary">
+                Handpicked deals you won't want to miss
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => (window.location.href = "/products")}
+            >
+              View All
+              <HiArrowRight className="ml-2 w-4 h-4" />
+            </Button>
+          </div>
+
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Card key={i} className="animate-pulse">
+                  <CardContent className="p-0">
+                    <div className="aspect-square bg-background-secondary rounded-t-lg" />
+                    <div className="p-4">
+                      <div className="h-4 bg-background-secondary rounded mb-2" />
+                      <div className="h-4 bg-background-secondary rounded w-2/3 mb-4" />
+                      <div className="h-6 bg-background-secondary rounded w-1/2" />
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {featuredProducts.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Newsletter Section */}
+      <section className="py-16 bg-primary text-white">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-3xl font-bold font-display mb-4">
+            Stay Updated with Latest Deals
+          </h2>
+          <p className="text-primary-light mb-8">
+            Subscribe to our newsletter and be the first to know about new
+            arrivals and exclusive offers
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
+            <input
+              type="email"
+              placeholder="Enter your email"
+              className="flex-1 px-4 py-3 rounded-lg text-foreground"
+            />
+            <Button className="bg-white text-primary hover:bg-gray-100">
+              Subscribe
+            </Button>
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="bg-foreground text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -235,5 +372,102 @@ export default function Home() {
         </div>
       </footer>
     </div>
+  );
+}
+
+// Helper function for category icons
+function getCategoryIcon(slug: string) {
+  const icons: Record<string, string> = {
+    laptops: "💻",
+    "mobile-phones": "📱",
+    tablets: "📱",
+    cameras: "📷",
+    printers: "🖨️",
+  };
+  return icons[slug] || "📦";
+}
+
+// Product Card Component
+function ProductCard({ product }: { product: Product }) {
+  const getConditionBadge = (grade: string) => {
+    const colors = {
+      A: "bg-secondary/10 text-secondary",
+      B: "bg-warning/10 text-warning",
+      C: "bg-accent/10 text-accent",
+    };
+    const labels = {
+      A: "Excellent",
+      B: "Good",
+      C: "Fair",
+    };
+
+    return (
+      <span
+        className={`px-2 py-1 rounded-full text-xs font-medium ${
+          colors[grade as keyof typeof colors]
+        }`}
+      >
+        Grade {grade}
+      </span>
+    );
+  };
+
+  const getLowestPrice = () => {
+    if (!product.variants?.length) return null;
+    return Math.min(...product.variants.map((v) => v.priceSale));
+  };
+
+  const price = getLowestPrice();
+
+  return (
+    <Link href={`/products/${product.slug}`}>
+      <Card className="hover:shadow-lg transition-shadow duration-300 cursor-pointer">
+        <CardContent className="p-0">
+          <div className="aspect-square bg-background-secondary rounded-t-lg flex items-center justify-center">
+            {product.images?.length ? (
+              <img
+                src={product.images[0].url}
+                alt={product.title}
+                className="w-full h-full object-cover rounded-t-lg"
+              />
+            ) : (
+              <div className="text-foreground-muted text-6xl">📱</div>
+            )}
+          </div>
+
+          <div className="p-4">
+            <div className="mb-2">
+              {getConditionBadge(product.conditionGrade)}
+            </div>
+
+            <h3 className="text-sm font-semibold text-foreground mb-2 line-clamp-2">
+              {product.title}
+            </h3>
+
+            <div className="flex items-center mb-2">
+              <div className="flex">
+                {[...Array(5)].map((_, i) => (
+                  <HiStar key={i} className="w-3 h-3 text-rating" />
+                ))}
+              </div>
+              <span className="text-xs text-foreground-secondary ml-1">
+                (4.5)
+              </span>
+            </div>
+
+            {price && (
+              <div className="flex items-center justify-between">
+                <span className="text-lg font-bold text-price">
+                  ₹{price.toLocaleString()}
+                </span>
+                <span className="text-xs text-foreground-muted">
+                  Starting from
+                </span>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </Link>
   );
 }
