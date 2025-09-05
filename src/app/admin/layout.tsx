@@ -47,7 +47,7 @@ export default function AdminLayout({
 
   return (
     <AdminProtection>
-      <div className="min-h-screen bg-background-secondary">
+      <div className="min-h-screen bg-background-secondary flex">
         {/* Mobile sidebar backdrop */}
         {sidebarOpen && (
           <div
@@ -60,7 +60,7 @@ export default function AdminLayout({
 
         {/* Sidebar */}
         <div
-          className={`fixed inset-y-0 left-0 z-50 w-64 bg-surface border-r border-border transform transition-transform duration-200 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${
+          className={`fixed inset-y-0 left-0 z-50 w-64 bg-surface border-r border-border transform transition-transform duration-200 ease-in-out lg:translate-x-0 lg:static lg:flex-shrink-0 ${
             sidebarOpen ? "translate-x-0" : "-translate-x-full"
           }`}
         >
@@ -125,9 +125,9 @@ export default function AdminLayout({
         </div>
 
         {/* Main content */}
-        <div className="lg:ml-64">
+        <div className="flex-1 flex flex-col lg:ml-0">
           {/* Top bar */}
-          <header className="bg-surface border-b border-border px-6 py-4">
+          <header className="bg-surface border-b border-border px-6 py-4 flex-shrink-0">
             <div className="flex items-center justify-between">
               <Button
                 variant="ghost"
@@ -147,7 +147,7 @@ export default function AdminLayout({
           </header>
 
           {/* Page content */}
-          <main className="p-6">{children}</main>
+          <main className="flex-1 p-6">{children}</main>
         </div>
       </div>
     </AdminProtection>

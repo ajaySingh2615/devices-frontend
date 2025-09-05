@@ -74,7 +74,7 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-full">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold font-display text-foreground">
