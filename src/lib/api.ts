@@ -20,6 +20,8 @@ export interface User {
   email: string;
   phone?: string;
   role: string;
+  status: "ACTIVE" | "INACTIVE" | "SUSPENDED";
+  createdAt: string;
   avatarUrl?: string;
 }
 
@@ -77,6 +79,12 @@ export interface UpdateProfileRequest {
 let accessToken: string | null = null;
 let refreshToken: string | null = null;
 
+// Initialize tokens from localStorage on app startup
+if (typeof window !== "undefined") {
+  accessToken = localStorage.getItem("accessToken");
+  refreshToken = localStorage.getItem("refreshToken");
+}
+
 export const setTokens = (access: string, refresh: string) => {
   accessToken = access;
   refreshToken = refresh;
@@ -110,6 +118,35 @@ export const clearTokens = () => {
   }
 };
 
+// Utility function to check if user is authenticated
+export const isAuthenticated = (): boolean => {
+  const tokens = getTokens();
+  return !!(tokens.accessToken && tokens.refreshToken);
+};
+
+// Utility function to manually refresh token
+export const refreshAuthToken = async (): Promise<boolean> => {
+  try {
+    const tokens = getTokens();
+    if (!tokens.refreshToken) {
+      return false;
+    }
+
+    const response = await api.post("/api/v1/auth/refresh", {
+      refreshToken: tokens.refreshToken,
+    });
+
+    const { accessToken: newAccessToken, refreshToken: newRefreshToken } =
+      response.data;
+    setTokens(newAccessToken, newRefreshToken);
+    return true;
+  } catch (error) {
+    console.error("Manual token refresh failed:", error);
+    clearTokens();
+    return false;
+  }
+};
+
 // Request interceptor to add auth token
 api.interceptors.request.use(
   (config) => {
@@ -130,12 +167,17 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // Handle both 401 (Unauthorized) and 403 (Forbidden) as potential token expiration
+    if (
+      (error.response?.status === 401 || error.response?.status === 403) &&
+      !originalRequest._retry
+    ) {
       originalRequest._retry = true;
 
       try {
         const tokens = getTokens();
         if (tokens.refreshToken) {
+          console.log("Attempting to refresh token...");
           const response = await api.post("/api/v1/auth/refresh", {
             refreshToken: tokens.refreshToken,
           });
@@ -143,22 +185,31 @@ api.interceptors.response.use(
           const { accessToken: newAccessToken, refreshToken: newRefreshToken } =
             response.data;
           setTokens(newAccessToken, newRefreshToken);
+          console.log("Token refreshed successfully");
 
           originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
           return api(originalRequest);
+        } else {
+          console.log("No refresh token available, redirecting to login");
+          clearTokens();
+          window.location.href = "/auth/login";
         }
       } catch (refreshError) {
+        console.error("Token refresh failed:", refreshError);
         clearTokens();
+        toast.error("Session expired. Please login again.");
         window.location.href = "/auth/login";
         return Promise.reject(refreshError);
       }
     }
 
-    // Show error toast for API errors
-    if (error.response?.data?.message) {
-      toast.error(error.response.data.message);
-    } else if (error.message) {
-      toast.error(error.message);
+    // Show error toast for API errors (but not for auth errors as they're handled above)
+    if (error.response?.status !== 401 && error.response?.status !== 403) {
+      if (error.response?.data?.message) {
+        toast.error(error.response.data.message);
+      } else if (error.message) {
+        toast.error(error.message);
+      }
     }
 
     return Promise.reject(error);
@@ -348,26 +399,45 @@ export interface DashboardStats {
   totalInventoryValue: number;
   productGrowthPercentage: number;
   userGrowthPercentage: number;
+  // Extended properties for analytics
+  productGrowth: number;
+  userGrowth: number;
+  categoryGrowth: number;
+  brandGrowth: number;
+  inventory: {
+    totalStock: number;
+    totalValue: number;
+    inStock: number;
+    lowStock: number;
+    outOfStock: number;
+    reserved: number;
+  };
 }
 
 export interface SalesChartData {
   date: string;
   revenue: number;
   orders: number;
+  sales: number; // Added for analytics compatibility
 }
 
 export interface TopProductData {
   productId: string;
   title: string;
+  productTitle: string; // Added for analytics compatibility
   totalRevenue: number;
+  revenue: number; // Added for analytics compatibility
   unitsSold: number;
+  sales: number; // Added for analytics compatibility
   averageRating: number;
 }
 
 export interface RecentActivityData {
   id: string;
   type: string;
+  action: string; // Added for analytics compatibility
   description: string;
+  details: string; // Added for analytics compatibility
   timestamp: string;
   user: string;
 }
@@ -405,6 +475,121 @@ export const adminApi = {
   getLowStockAlerts: async (): Promise<string[]> => {
     const response = await api.get("/api/v1/admin/dashboard/low-stock-alerts");
     return response.data;
+  },
+
+  // Categories
+  getCategories: async (): Promise<Category[]> => {
+    const response = await api.get("/api/v1/admin/categories");
+    return response.data;
+  },
+
+  createCategory: async (data: CreateCategoryRequest): Promise<Category> => {
+    const response = await api.post("/api/v1/admin/categories", data);
+    return response.data;
+  },
+
+  updateCategory: async (
+    id: string,
+    data: UpdateCategoryRequest
+  ): Promise<Category> => {
+    const response = await api.put(`/api/v1/admin/categories/${id}`, data);
+    return response.data;
+  },
+
+  deleteCategory: async (id: string): Promise<void> => {
+    await api.delete(`/api/v1/admin/categories/${id}`);
+  },
+
+  // Brands
+  getBrands: async (): Promise<Brand[]> => {
+    const response = await api.get("/api/v1/admin/brands");
+    return response.data;
+  },
+
+  createBrand: async (data: CreateBrandRequest): Promise<Brand> => {
+    const response = await api.post("/api/v1/admin/brands", data);
+    return response.data;
+  },
+
+  updateBrand: async (id: string, data: UpdateBrandRequest): Promise<Brand> => {
+    const response = await api.put(`/api/v1/admin/brands/${id}`, data);
+    return response.data;
+  },
+
+  // Products
+  createProduct: async (data: CreateProductRequest): Promise<Product> => {
+    const response = await api.post("/api/v1/admin/products", data);
+    return response.data;
+  },
+
+  updateProduct: async (
+    id: string,
+    data: UpdateProductRequest
+  ): Promise<Product> => {
+    const response = await api.put(`/api/v1/admin/products/${id}`, data);
+    return response.data;
+  },
+
+  // Variants
+  addVariant: async (
+    productId: string,
+    data: CreateVariantRequest
+  ): Promise<ProductVariant> => {
+    const response = await api.post(
+      `/api/v1/admin/products/${productId}/variants`,
+      data
+    );
+    return response.data;
+  },
+
+  updateVariant: async (
+    id: string,
+    data: UpdateVariantRequest
+  ): Promise<ProductVariant> => {
+    const response = await api.put(`/api/v1/admin/variants/${id}`, data);
+    return response.data;
+  },
+
+  // Inventory
+  updateInventory: async (
+    variantId: string,
+    data: UpdateInventoryRequest
+  ): Promise<Inventory> => {
+    const response = await api.put(
+      `/api/v1/admin/inventory/${variantId}`,
+      data
+    );
+    return response.data;
+  },
+
+  // Users Management
+  getAllUsers: async (): Promise<User[]> => {
+    const response = await api.get("/api/v1/admin/users");
+    return response.data;
+  },
+
+  updateUserRole: async (
+    userId: string,
+    role: "ADMIN" | "USER"
+  ): Promise<User> => {
+    const response = await api.put(`/api/v1/admin/users/${userId}/role`, {
+      role,
+    });
+    return response.data;
+  },
+
+  updateUserStatus: async (
+    userId: string,
+    status: "ACTIVE" | "INACTIVE" | "SUSPENDED"
+  ): Promise<User> => {
+    const response = await api.put(`/api/v1/admin/users/${userId}/status`, {
+      status,
+    });
+    return response.data;
+  },
+
+  deleteUser: async (userId: string): Promise<void> => {
+    await api.delete(`/api/v1/admin/users/${userId}`);
   },
 };
 
@@ -504,6 +689,93 @@ export interface ProductSearchParams {
   condition?: string;
   minPrice?: number;
   maxPrice?: number;
+}
+
+// Admin Types
+export type ConditionGrade = "A" | "B" | "C";
+
+// Admin Request Types
+export interface CreateCategoryRequest {
+  parentId?: string;
+  name: string;
+  slug: string;
+  description?: string;
+  sortOrder?: number;
+}
+
+export interface UpdateCategoryRequest {
+  parentId?: string;
+  name?: string;
+  slug?: string;
+  description?: string;
+  isActive?: boolean;
+  sortOrder?: number;
+}
+
+export interface CreateBrandRequest {
+  name: string;
+  slug: string;
+  description?: string;
+  logoUrl?: string;
+}
+
+export interface UpdateBrandRequest {
+  name?: string;
+  slug?: string;
+  description?: string;
+  logoUrl?: string;
+  isActive?: boolean;
+}
+
+export interface CreateProductRequest {
+  categoryId: string;
+  brandId: string;
+  title: string;
+  slug: string;
+  description?: string;
+  conditionGrade: ConditionGrade;
+  warrantyMonths?: number;
+}
+
+export interface UpdateProductRequest {
+  categoryId?: string;
+  brandId?: string;
+  title?: string;
+  slug?: string;
+  description?: string;
+  conditionGrade?: ConditionGrade;
+  warrantyMonths?: number;
+  isActive?: boolean;
+}
+
+export interface CreateVariantRequest {
+  sku: string;
+  mpn?: string;
+  color?: string;
+  storageGb?: number;
+  ramGb?: number;
+  priceMrp: number;
+  priceSale: number;
+  taxRate?: number;
+  weightGrams?: number;
+}
+
+export interface UpdateVariantRequest {
+  sku?: string;
+  mpn?: string;
+  color?: string;
+  storageGb?: number;
+  ramGb?: number;
+  priceMrp?: number;
+  priceSale?: number;
+  taxRate?: number;
+  weightGrams?: number;
+}
+
+export interface UpdateInventoryRequest {
+  quantity?: number;
+  safetyStock?: number;
+  reserved?: number;
 }
 
 // Catalog API
