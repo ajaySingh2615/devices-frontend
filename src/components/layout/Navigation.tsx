@@ -13,12 +13,19 @@ import {
 } from "react-icons/hi";
 
 import { Button } from "@/components/ui/Button";
-import { catalogApi, Category, getTokens, clearTokens } from "@/lib/api";
+import {
+  catalogApi,
+  Category,
+  getTokens,
+  clearTokens,
+  userApi,
+} from "@/lib/api";
 
 export default function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const router = useRouter();
   const pathname = usePathname();
@@ -26,7 +33,45 @@ export default function Navigation() {
   useEffect(() => {
     loadCategories();
     checkAuthStatus();
+
+    // Check auth status on route changes
+    const handleRouteChange = () => {
+      checkAuthStatus();
+    };
+
+    // Listen for custom auth state changes
+    const handleAuthStateChange = () => {
+      checkAuthStatus();
+    };
+
+    // Listen for storage changes (when tokens are updated)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (
+        e.key === "accessToken" ||
+        e.key === "refreshToken" ||
+        e.key === null
+      ) {
+        checkAuthStatus();
+      }
+    };
+
+    window.addEventListener("authStateChanged", handleAuthStateChange);
+    window.addEventListener("storage", handleStorageChange);
+
+    // Also check on focus (when user comes back to tab)
+    window.addEventListener("focus", handleRouteChange);
+
+    return () => {
+      window.removeEventListener("authStateChanged", handleAuthStateChange);
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("focus", handleRouteChange);
+    };
   }, []);
+
+  // Check auth status whenever pathname changes
+  useEffect(() => {
+    checkAuthStatus();
+  }, [pathname]);
 
   const loadCategories = async () => {
     try {
@@ -37,14 +82,30 @@ export default function Navigation() {
     }
   };
 
-  const checkAuthStatus = () => {
+  const checkAuthStatus = async () => {
     const tokens = getTokens();
-    setIsLoggedIn(!!tokens.accessToken);
+    const loggedIn = !!tokens.accessToken;
+    setIsLoggedIn(loggedIn);
+
+    if (loggedIn) {
+      try {
+        const user = await userApi.getProfile();
+        const adminRole =
+          user && (user.role === "ADMIN" || user.role === "SUPER_ADMIN");
+        setIsAdmin(adminRole || false);
+      } catch (error) {
+        console.error("Failed to get user info:", error);
+        setIsAdmin(false);
+      }
+    } else {
+      setIsAdmin(false);
+    }
   };
 
   const handleLogout = () => {
     clearTokens();
     setIsLoggedIn(false);
+    setIsAdmin(false);
     router.push("/");
   };
 
@@ -135,6 +196,14 @@ export default function Navigation() {
                   >
                     Profile
                   </Link>
+                  {isAdmin && (
+                    <Link
+                      href="/admin"
+                      className="block px-4 py-2 text-sm text-foreground-secondary hover:bg-background-secondary"
+                    >
+                      Admin Panel
+                    </Link>
+                  )}
                   <hr className="my-2" />
                   <button
                     onClick={handleLogout}

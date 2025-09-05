@@ -82,6 +82,11 @@ export const setTokens = (access: string, refresh: string) => {
   refreshToken = refresh;
   localStorage.setItem("accessToken", access);
   localStorage.setItem("refreshToken", refresh);
+
+  // Dispatch custom event to notify components
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("authStateChanged"));
+  }
 };
 
 export const getTokens = () => {
@@ -100,6 +105,8 @@ export const clearTokens = () => {
   if (typeof window !== "undefined") {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
+    // Dispatch custom event to notify components
+    window.dispatchEvent(new CustomEvent("authStateChanged"));
   }
 };
 
@@ -223,6 +230,180 @@ export const userApi = {
 
   updateProfile: async (data: UpdateProfileRequest): Promise<User> => {
     const response = await api.patch("/api/v1/users/me", data);
+    return response.data;
+  },
+};
+
+// Media Upload Types
+export type MediaOwnerType =
+  | "PRODUCT"
+  | "VARIANT"
+  | "BRAND"
+  | "CATEGORY"
+  | "USER";
+export type MediaType = "IMAGE" | "VIDEO" | "DOCUMENT";
+
+export interface MediaUploadRequest {
+  ownerType: MediaOwnerType;
+  ownerId: string;
+  mediaType: MediaType;
+  alt?: string;
+  sortOrder?: number;
+}
+
+export interface MediaUploadResponse {
+  id: string;
+  url: string;
+  publicId?: string;
+  type: MediaType;
+  alt?: string;
+  sortOrder: number;
+}
+
+export interface SignedUploadUrlRequest {
+  ownerType: MediaOwnerType;
+  ownerId: string;
+  mediaType: MediaType;
+}
+
+export interface SignedUploadUrlResponse {
+  uploadUrl: string;
+  uploadParameters: Record<string, any>;
+  expiresAt: number;
+}
+
+// Media API
+export const mediaApi = {
+  generateUploadUrl: async (
+    data: SignedUploadUrlRequest
+  ): Promise<SignedUploadUrlResponse> => {
+    const response = await api.post("/api/v1/media/upload-url", data);
+    return response.data;
+  },
+
+  uploadFile: async (
+    file: File,
+    data: MediaUploadRequest
+  ): Promise<MediaUploadResponse> => {
+    const formData = new FormData();
+    formData.append("file", file);
+    Object.entries(data).forEach(([key, value]) => {
+      formData.append(key, value.toString());
+    });
+
+    const response = await api.post("/api/v1/media/upload", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response.data;
+  },
+
+  saveMediaMetadata: async (
+    data: MediaUploadRequest,
+    cloudinaryUrl: string,
+    publicId: string
+  ): Promise<MediaUploadResponse> => {
+    const response = await api.post(
+      `/api/v1/media/metadata?cloudinaryUrl=${encodeURIComponent(
+        cloudinaryUrl
+      )}&publicId=${encodeURIComponent(publicId)}`,
+      data
+    );
+    return response.data;
+  },
+
+  getMediaByOwner: async (
+    ownerType: MediaOwnerType,
+    ownerId: string
+  ): Promise<MediaUploadResponse[]> => {
+    const response = await api.get(
+      `/api/v1/media/owner/${ownerType}/${ownerId}`
+    );
+    return response.data;
+  },
+
+  deleteMedia: async (mediaId: string): Promise<void> => {
+    await api.delete(`/api/v1/media/${mediaId}`);
+  },
+
+  updateMediaOrder: async (
+    mediaId: string,
+    sortOrder: number
+  ): Promise<void> => {
+    await api.put(`/api/v1/media/${mediaId}/order?sortOrder=${sortOrder}`);
+  },
+};
+
+// Admin Dashboard Types
+export interface DashboardStats {
+  totalProducts: number;
+  activeProducts: number;
+  totalCategories: number;
+  totalBrands: number;
+  totalUsers: number;
+  inStockItems: number;
+  lowStockItems: number;
+  outOfStockItems: number;
+  totalInventoryValue: number;
+  productGrowthPercentage: number;
+  userGrowthPercentage: number;
+}
+
+export interface SalesChartData {
+  date: string;
+  revenue: number;
+  orders: number;
+}
+
+export interface TopProductData {
+  productId: string;
+  title: string;
+  totalRevenue: number;
+  unitsSold: number;
+  averageRating: number;
+}
+
+export interface RecentActivityData {
+  id: string;
+  type: string;
+  description: string;
+  timestamp: string;
+  user: string;
+}
+
+// Admin API
+export const adminApi = {
+  getDashboardStats: async (): Promise<DashboardStats> => {
+    const response = await api.get("/api/v1/admin/dashboard/stats");
+    return response.data;
+  },
+
+  getSalesChart: async (days: number = 30): Promise<SalesChartData[]> => {
+    const response = await api.get(
+      `/api/v1/admin/dashboard/sales-chart?days=${days}`
+    );
+    return response.data;
+  },
+
+  getTopProducts: async (limit: number = 10): Promise<TopProductData[]> => {
+    const response = await api.get(
+      `/api/v1/admin/dashboard/top-products?limit=${limit}`
+    );
+    return response.data;
+  },
+
+  getRecentActivity: async (
+    limit: number = 20
+  ): Promise<RecentActivityData[]> => {
+    const response = await api.get(
+      `/api/v1/admin/dashboard/recent-activity?limit=${limit}`
+    );
+    return response.data;
+  },
+
+  getLowStockAlerts: async (): Promise<string[]> => {
+    const response = await api.get("/api/v1/admin/dashboard/low-stock-alerts");
     return response.data;
   },
 };
