@@ -225,10 +225,11 @@ export default function AdminBrandsPage() {
 
   const handleToggleStatus = async (brand: Brand) => {
     try {
+      const newStatus = !brand.isActive;
       await adminApi.updateBrand(brand.id, {
-        isActive: !brand.isActive,
+        isActive: newStatus,
       });
-      toast.success(`Brand ${brand.isActive ? "deactivated" : "activated"}`);
+      toast.success(`Brand ${newStatus ? "activated" : "deactivated"}`);
       await loadBrands();
     } catch (error: any) {
       console.error("Failed to update brand status:", error);

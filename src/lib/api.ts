@@ -517,6 +517,11 @@ export const adminApi = {
   },
 
   // Products
+  getAllProducts: async (): Promise<Product[]> => {
+    const response = await api.get("/api/v1/admin/products");
+    return response.data;
+  },
+
   createProduct: async (data: CreateProductRequest): Promise<Product> => {
     const response = await api.post("/api/v1/admin/products", data);
     return response.data;

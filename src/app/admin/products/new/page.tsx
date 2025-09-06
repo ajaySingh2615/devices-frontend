@@ -106,8 +106,8 @@ export default function NewProductPage() {
   const loadData = async () => {
     try {
       const [categoriesData, brandsData] = await Promise.all([
-        adminApi.getCategories(),
-        adminApi.getBrands(),
+        catalogApi.getCategories(), // Use public API to get only active categories
+        catalogApi.getBrands(), // Use public API to get only active brands
       ]);
 
       setCategories(categoriesData);

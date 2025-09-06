@@ -8,7 +8,7 @@ import { HiPlus, HiPencil, HiTrash, HiEye, HiSearch } from "react-icons/hi";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import { catalogApi, Product, Category, Brand } from "@/lib/api";
+import { adminApi, Product, Category, Brand } from "@/lib/api";
 
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -25,13 +25,15 @@ export default function AdminProductsPage() {
 
   const loadData = async () => {
     try {
+      console.log("Loading admin data...");
       const [productsData, categoriesData, brandsData] = await Promise.all([
-        catalogApi.searchProducts({ page: 0, size: 100 }),
-        catalogApi.getCategories(),
-        catalogApi.getBrands(),
+        adminApi.getAllProducts(),
+        adminApi.getCategories(),
+        adminApi.getBrands(),
       ]);
 
-      setProducts(productsData.content);
+      console.log("Loaded products:", productsData);
+      setProducts(productsData);
       setCategories(categoriesData);
       setBrands(brandsData);
     } catch (error) {
@@ -42,14 +44,62 @@ export default function AdminProductsPage() {
     }
   };
 
+  const handleToggleStatus = async (product: Product) => {
+    try {
+      console.log(
+        "Toggling status for product:",
+        product.id,
+        "from",
+        product.isActive,
+        "to",
+        !product.isActive
+      );
+      const newStatus = !product.isActive;
+
+      const response = await adminApi.updateProduct(product.id, {
+        isActive: newStatus,
+      });
+      console.log("Update response:", response);
+
+      toast.success(`Product ${newStatus ? "activated" : "deactivated"}`);
+      await loadData();
+    } catch (error: any) {
+      console.error("Failed to update product status:", error);
+      console.error("Error details:", error.response?.data);
+      toast.error(
+        `Failed to update product status: ${
+          error.response?.data?.message || error.message
+        }`
+      );
+    }
+  };
+
+  const handleDeleteProduct = async (product: Product) => {
+    if (confirm(`Are you sure you want to delete "${product.title}"?`)) {
+      try {
+        // Note: Delete endpoint not implemented in backend yet
+        toast.error("Delete functionality not implemented yet");
+        // await adminApi.deleteProduct(product.id);
+        // toast.success("Product deleted successfully");
+        // await loadData();
+      } catch (error: any) {
+        console.error("Failed to delete product:", error);
+        toast.error("Failed to delete product");
+      }
+    }
+  };
+
   const filteredProducts = products.filter((product) => {
     const matchesSearch = product.title
       .toLowerCase()
       .includes(searchQuery.toLowerCase());
     const matchesCategory =
-      !selectedCategory || product.category?.slug === selectedCategory;
+      !selectedCategory ||
+      categories.find((c) => c.id === product.categoryId)?.slug ===
+        selectedCategory;
     const matchesBrand =
-      !selectedBrand || product.brand?.slug === selectedBrand;
+      !selectedBrand ||
+      brands.find((b) => b.id === product.brandId)?.slug === selectedBrand;
 
     return matchesSearch && matchesCategory && matchesBrand;
   });
@@ -185,12 +235,14 @@ export default function AdminProductsPage() {
                     </td>
                     <td className="py-4 px-4">
                       <span className="text-sm">
-                        {product.category?.name || "N/A"}
+                        {categories.find((c) => c.id === product.categoryId)
+                          ?.name || "N/A"}
                       </span>
                     </td>
                     <td className="py-4 px-4">
                       <span className="text-sm">
-                        {product.brand?.name || "N/A"}
+                        {brands.find((b) => b.id === product.brandId)?.name ||
+                          "N/A"}
                       </span>
                     </td>
                     <td className="py-4 px-4">
@@ -207,15 +259,16 @@ export default function AdminProductsPage() {
                       </span>
                     </td>
                     <td className="py-4 px-4">
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      <button
+                        onClick={() => handleToggleStatus(product)}
+                        className={`px-2 py-1 rounded-full text-xs font-medium transition-colors ${
                           product.isActive
-                            ? "bg-secondary/10 text-secondary"
-                            : "bg-error/10 text-error"
+                            ? "bg-secondary/10 text-secondary hover:bg-secondary/20"
+                            : "bg-error/10 text-error hover:bg-error/20"
                         }`}
                       >
                         {product.isActive ? "Active" : "Inactive"}
-                      </span>
+                      </button>
                     </td>
                     <td className="py-4 px-4">
                       <div className="flex items-center space-x-2">
@@ -233,17 +286,7 @@ export default function AdminProductsPage() {
                           variant="ghost"
                           size="sm"
                           className="text-error hover:bg-error/10"
-                          onClick={() => {
-                            if (
-                              confirm(
-                                "Are you sure you want to delete this product?"
-                              )
-                            ) {
-                              toast.error(
-                                "Delete functionality not implemented yet"
-                              );
-                            }
-                          }}
+                          onClick={() => handleDeleteProduct(product)}
                         >
                           <HiTrash className="w-4 h-4" />
                         </Button>

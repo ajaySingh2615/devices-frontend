@@ -254,12 +254,11 @@ export default function AdminCategoriesPage() {
 
   const handleToggleStatus = async (category: Category) => {
     try {
+      const newStatus = !category.isActive;
       await adminApi.updateCategory(category.id, {
-        isActive: !category.isActive,
+        isActive: newStatus,
       });
-      toast.success(
-        `Category ${category.isActive ? "deactivated" : "activated"}`
-      );
+      toast.success(`Category ${newStatus ? "activated" : "deactivated"}`);
       await loadCategories();
     } catch (error: any) {
       console.error("Failed to update category status:", error);
