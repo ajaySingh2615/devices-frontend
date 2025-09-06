@@ -125,17 +125,19 @@ export default function AdminAnalyticsPage() {
                   {stats.totalProducts}
                 </p>
                 <div className="flex items-center mt-2">
-                  {stats.productGrowth >= 0 ? (
+                  {(stats.productGrowth ?? 0) >= 0 ? (
                     <HiTrendingUp className="w-4 h-4 text-secondary mr-1" />
                   ) : (
                     <HiTrendingDown className="w-4 h-4 text-error mr-1" />
                   )}
                   <span
                     className={`text-sm ${
-                      stats.productGrowth >= 0 ? "text-secondary" : "text-error"
+                      (stats.productGrowth ?? 0) >= 0
+                        ? "text-secondary"
+                        : "text-error"
                     }`}
                   >
-                    {stats.productGrowth.toFixed(1)}%
+                    {(stats.productGrowth ?? 0).toFixed(1)}%
                   </span>
                 </div>
               </div>
@@ -155,17 +157,19 @@ export default function AdminAnalyticsPage() {
                   {stats.totalUsers}
                 </p>
                 <div className="flex items-center mt-2">
-                  {stats.userGrowth >= 0 ? (
+                  {(stats.userGrowth ?? 0) >= 0 ? (
                     <HiTrendingUp className="w-4 h-4 text-secondary mr-1" />
                   ) : (
                     <HiTrendingDown className="w-4 h-4 text-error mr-1" />
                   )}
                   <span
                     className={`text-sm ${
-                      stats.userGrowth >= 0 ? "text-secondary" : "text-error"
+                      (stats.userGrowth ?? 0) >= 0
+                        ? "text-secondary"
+                        : "text-error"
                     }`}
                   >
-                    {stats.userGrowth.toFixed(1)}%
+                    {(stats.userGrowth ?? 0).toFixed(1)}%
                   </span>
                 </div>
               </div>
@@ -185,19 +189,19 @@ export default function AdminAnalyticsPage() {
                   {stats.totalCategories}
                 </p>
                 <div className="flex items-center mt-2">
-                  {stats.categoryGrowth >= 0 ? (
+                  {(stats.categoryGrowth ?? 0) >= 0 ? (
                     <HiTrendingUp className="w-4 h-4 text-secondary mr-1" />
                   ) : (
                     <HiTrendingDown className="w-4 h-4 text-error mr-1" />
                   )}
                   <span
                     className={`text-sm ${
-                      stats.categoryGrowth >= 0
+                      (stats.categoryGrowth ?? 0) >= 0
                         ? "text-secondary"
                         : "text-error"
                     }`}
                   >
-                    {stats.categoryGrowth.toFixed(1)}%
+                    {(stats.categoryGrowth ?? 0).toFixed(1)}%
                   </span>
                 </div>
               </div>
@@ -217,17 +221,19 @@ export default function AdminAnalyticsPage() {
                   {stats.totalBrands}
                 </p>
                 <div className="flex items-center mt-2">
-                  {stats.brandGrowth >= 0 ? (
+                  {(stats.brandGrowth ?? 0) >= 0 ? (
                     <HiTrendingUp className="w-4 h-4 text-secondary mr-1" />
                   ) : (
                     <HiTrendingDown className="w-4 h-4 text-error mr-1" />
                   )}
                   <span
                     className={`text-sm ${
-                      stats.brandGrowth >= 0 ? "text-secondary" : "text-error"
+                      (stats.brandGrowth ?? 0) >= 0
+                        ? "text-secondary"
+                        : "text-error"
                     }`}
                   >
-                    {stats.brandGrowth.toFixed(1)}%
+                    {(stats.brandGrowth ?? 0).toFixed(1)}%
                   </span>
                 </div>
               </div>
@@ -251,13 +257,13 @@ export default function AdminAnalyticsPage() {
                     Total Stock
                   </p>
                   <p className="text-2xl font-bold text-foreground">
-                    {stats.inventory.totalStock}
+                    {stats.inventory?.totalStock ?? 0}
                   </p>
                 </div>
                 <div className="text-right">
                   <p className="text-sm text-foreground-secondary">Value</p>
                   <p className="text-lg font-semibold text-primary">
-                    ₹{stats.inventory.totalValue.toLocaleString()}
+                    ₹{(stats.inventory?.totalValue ?? 0).toLocaleString()}
                   </p>
                 </div>
               </div>
@@ -268,7 +274,7 @@ export default function AdminAnalyticsPage() {
                     In Stock
                   </p>
                   <p className="text-xl font-bold text-secondary">
-                    {stats.inventory.inStock}
+                    {stats.inventory?.inStock ?? 0}
                   </p>
                 </div>
                 <div className="p-4 bg-warning/10 rounded-lg">
@@ -276,7 +282,7 @@ export default function AdminAnalyticsPage() {
                     Low Stock
                   </p>
                   <p className="text-xl font-bold text-warning">
-                    {stats.inventory.lowStock}
+                    {stats.inventory?.lowStock ?? 0}
                   </p>
                 </div>
                 <div className="p-4 bg-error/10 rounded-lg">
@@ -284,7 +290,7 @@ export default function AdminAnalyticsPage() {
                     Out of Stock
                   </p>
                   <p className="text-xl font-bold text-error">
-                    {stats.inventory.outOfStock}
+                    {stats.inventory?.outOfStock ?? 0}
                   </p>
                 </div>
                 <div className="p-4 bg-accent/10 rounded-lg">
@@ -292,7 +298,7 @@ export default function AdminAnalyticsPage() {
                     Reserved
                   </p>
                   <p className="text-xl font-bold text-accent">
-                    {stats.inventory.reserved}
+                    {stats.inventory?.reserved ?? 0}
                   </p>
                 </div>
               </div>
@@ -314,7 +320,9 @@ export default function AdminAnalyticsPage() {
                       className="flex items-center justify-between"
                     >
                       <span className="text-sm text-foreground-secondary">
-                        {new Date(data.date).toLocaleDateString()}
+                        {data.date
+                          ? new Date(data.date).toLocaleDateString()
+                          : "N/A"}
                       </span>
                       <div className="flex items-center space-x-2">
                         <div className="w-24 bg-background-secondary rounded-full h-2">
@@ -322,8 +330,11 @@ export default function AdminAnalyticsPage() {
                             className="h-full bg-primary rounded-full"
                             style={{
                               width: `${Math.min(
-                                (data.sales /
-                                  Math.max(...salesData.map((d) => d.sales))) *
+                                ((data.sales ?? 0) /
+                                  Math.max(
+                                    1,
+                                    ...salesData.map((d) => d.sales ?? 0)
+                                  )) *
                                   100,
                                 100
                               )}%`,
@@ -331,7 +342,7 @@ export default function AdminAnalyticsPage() {
                           />
                         </div>
                         <span className="text-sm font-medium">
-                          ₹{data.sales.toLocaleString()}
+                          ₹{(data.sales ?? 0).toLocaleString()}
                         </span>
                       </div>
                     </div>
@@ -368,15 +379,17 @@ export default function AdminAnalyticsPage() {
                         </span>
                       </div>
                       <div>
-                        <p className="font-medium">{product.productTitle}</p>
+                        <p className="font-medium">
+                          {product.productTitle ?? product.title}
+                        </p>
                         <p className="text-sm text-foreground-secondary">
-                          {product.sales} sales
+                          {product.sales ?? 0} sales
                         </p>
                       </div>
                     </div>
                     <div className="text-right">
                       <p className="font-semibold">
-                        ₹{product.revenue.toLocaleString()}
+                        ₹{(product.revenue ?? 0).toLocaleString()}
                       </p>
                       <p className="text-sm text-foreground-secondary">
                         revenue
@@ -407,7 +420,9 @@ export default function AdminAnalyticsPage() {
                       <p className="text-sm font-medium">{activity.action}</p>
                       <p className="text-xs text-foreground-secondary">
                         {activity.details} •{" "}
-                        {new Date(activity.timestamp).toLocaleString()}
+                        {activity.timestamp
+                          ? new Date(activity.timestamp).toLocaleString()
+                          : "N/A"}
                       </p>
                     </div>
                   </div>
@@ -435,7 +450,12 @@ export default function AdminAnalyticsPage() {
               </div>
               <h3 className="font-semibold mb-2">Growth Rate</h3>
               <p className="text-2xl font-bold text-secondary">
-                +{Math.max(stats.productGrowth, stats.userGrowth).toFixed(1)}%
+                +
+                {Math.max(
+                  stats.productGrowth ?? 0,
+                  stats.userGrowth ?? 0
+                ).toFixed(1)}
+                %
               </p>
               <p className="text-sm text-foreground-secondary">
                 Best performing metric
@@ -449,7 +469,9 @@ export default function AdminAnalyticsPage() {
               <h3 className="font-semibold mb-2">Avg. Stock per Product</h3>
               <p className="text-2xl font-bold text-primary">
                 {stats.totalProducts > 0
-                  ? Math.round(stats.inventory.totalStock / stats.totalProducts)
+                  ? Math.round(
+                      (stats.inventory?.totalStock ?? 0) / stats.totalProducts
+                    )
                   : 0}
               </p>
               <p className="text-sm text-foreground-secondary">

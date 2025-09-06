@@ -399,12 +399,12 @@ export interface DashboardStats {
   totalInventoryValue: number;
   productGrowthPercentage: number;
   userGrowthPercentage: number;
-  // Extended properties for analytics
-  productGrowth: number;
-  userGrowth: number;
-  categoryGrowth: number;
-  brandGrowth: number;
-  inventory: {
+  // Growth percentages for analytics (optional since backend may not provide them)
+  productGrowth?: number;
+  userGrowth?: number;
+  categoryGrowth?: number;
+  brandGrowth?: number;
+  inventory?: {
     totalStock: number;
     totalValue: number;
     inStock: number;
@@ -416,29 +416,29 @@ export interface DashboardStats {
 
 export interface SalesChartData {
   date: string;
-  revenue: number;
-  orders: number;
-  sales: number; // Added for analytics compatibility
+  revenue?: number;
+  orders?: number;
+  sales?: number; // Added for analytics compatibility
 }
 
 export interface TopProductData {
   productId: string;
   title: string;
-  productTitle: string; // Added for analytics compatibility
-  totalRevenue: number;
-  revenue: number; // Added for analytics compatibility
-  unitsSold: number;
-  sales: number; // Added for analytics compatibility
+  productTitle?: string; // Added for analytics compatibility
+  totalRevenue?: number;
+  revenue?: number; // Added for analytics compatibility
+  unitsSold?: number;
+  sales?: number; // Added for analytics compatibility
   averageRating: number;
 }
 
 export interface RecentActivityData {
   id: string;
   type: string;
-  action: string; // Added for analytics compatibility
+  action?: string; // Added for analytics compatibility
   description: string;
-  details: string; // Added for analytics compatibility
-  timestamp: string;
+  details?: string; // Added for analytics compatibility
+  timestamp?: string;
   user: string;
 }
 
