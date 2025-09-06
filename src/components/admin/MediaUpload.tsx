@@ -55,11 +55,22 @@ export default function MediaUpload({
         const uploadPromises = acceptedFiles.map(async (file, index) => {
           // Upload to Cloudinary using signed URL
           const formData = new FormData();
+          console.log(
+            "Upload parameters received:",
+            signedUrlResponse.uploadParameters
+          );
           Object.entries(signedUrlResponse.uploadParameters).forEach(
             ([key, value]) => {
+              console.log(`Appending to FormData: ${key} = ${value}`);
               formData.append(key, value as string);
             }
           );
+
+          // Debug: Log all FormData entries
+          console.log("FormData entries:");
+          for (let [key, value] of formData.entries()) {
+            console.log(`  ${key}: ${value}`);
+          }
           formData.append("file", file);
 
           const response = await fetch(signedUrlResponse.uploadUrl, {
