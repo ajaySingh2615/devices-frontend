@@ -15,7 +15,9 @@ export default function AdminMediaPage() {
   const [showUpload, setShowUpload] = useState(false);
   const [selectedOwnerType, setSelectedOwnerType] =
     useState<MediaOwnerType>("PRODUCT");
-  const [ownerId, setOwnerId] = useState("prod-1"); // Default for testing
+  const [ownerId, setOwnerId] = useState(
+    "db994082-27e9-4af8-b7b1-c4f45ae7d302"
+  ); // Default to product with images
 
   useEffect(() => {
     loadMedia();
