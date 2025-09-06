@@ -522,6 +522,11 @@ export const adminApi = {
     return response.data;
   },
 
+  getProductById: async (id: string): Promise<Product> => {
+    const response = await api.get(`/api/v1/admin/products/${id}`);
+    return response.data;
+  },
+
   createProduct: async (data: CreateProductRequest): Promise<Product> => {
     const response = await api.post("/api/v1/admin/products", data);
     return response.data;
@@ -763,6 +768,7 @@ export interface CreateVariantRequest {
   priceSale: number;
   taxRate?: number;
   weightGrams?: number;
+  isActive?: boolean;
 }
 
 export interface UpdateVariantRequest {
@@ -775,6 +781,7 @@ export interface UpdateVariantRequest {
   priceSale?: number;
   taxRate?: number;
   weightGrams?: number;
+  isActive?: boolean;
 }
 
 export interface UpdateInventoryRequest {
