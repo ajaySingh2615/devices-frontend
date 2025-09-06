@@ -18,7 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { adminApi, User } from "@/lib/api";
 
 type UserRole = "ADMIN" | "USER";
-type UserStatus = "ACTIVE" | "INACTIVE" | "SUSPENDED";
+type UserStatus = "ACTIVE" | "INACTIVE" | "SUSPENDED" | "DELETED";
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<User[]>([]);
@@ -107,9 +107,10 @@ export default function AdminUsersPage() {
 
   const filteredUsers = users.filter((user) => {
     const matchesSearch =
-      user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (user.phone && user.phone.includes(searchQuery));
+      user.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (user.phone &&
+        user.phone.toLowerCase().includes(searchQuery.toLowerCase()));
 
     const matchesRole = selectedRole === "ALL" || user.role === selectedRole;
     const matchesStatus =
@@ -122,9 +123,18 @@ export default function AdminUsersPage() {
     const totalUsers = users.length;
     const adminUsers = users.filter((u) => u.role === "ADMIN").length;
     const activeUsers = users.filter((u) => u.status === "ACTIVE").length;
+    const inactiveUsers = users.filter((u) => u.status === "INACTIVE").length;
     const suspendedUsers = users.filter((u) => u.status === "SUSPENDED").length;
+    const deletedUsers = users.filter((u) => u.status === "DELETED").length;
 
-    return { totalUsers, adminUsers, activeUsers, suspendedUsers };
+    return {
+      totalUsers,
+      adminUsers,
+      activeUsers,
+      inactiveUsers,
+      suspendedUsers,
+      deletedUsers,
+    };
   };
 
   const stats = getUserStats();
@@ -152,7 +162,7 @@ export default function AdminUsersPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-6 gap-6">
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -206,6 +216,22 @@ export default function AdminUsersPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-foreground-secondary">
+                  Inactive Users
+                </p>
+                <p className="text-3xl font-bold text-foreground">
+                  {stats.inactiveUsers}
+                </p>
+              </div>
+              <HiUserCircle className="w-8 h-8 text-orange-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-foreground-secondary">
                   Suspended
                 </p>
                 <p className="text-3xl font-bold text-foreground">
@@ -213,6 +239,22 @@ export default function AdminUsersPage() {
                 </p>
               </div>
               <HiShieldExclamation className="w-8 h-8 text-error" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-foreground-secondary">
+                  Deleted
+                </p>
+                <p className="text-3xl font-bold text-foreground">
+                  {stats.deletedUsers}
+                </p>
+              </div>
+              <HiTrash className="w-8 h-8 text-gray-500" />
             </div>
           </CardContent>
         </Card>
@@ -270,6 +312,7 @@ export default function AdminUsersPage() {
                 <option value="ACTIVE">Active</option>
                 <option value="INACTIVE">Inactive</option>
                 <option value="SUSPENDED">Suspended</option>
+                <option value="DELETED">Deleted</option>
               </select>
             </div>
           </div>
@@ -353,19 +396,26 @@ export default function AdminUsersPage() {
                         className={`px-2 py-1 rounded-full text-xs font-medium border-none focus:ring-0 ${
                           user.status === "ACTIVE"
                             ? "bg-secondary/10 text-secondary"
+                            : user.status === "INACTIVE"
+                            ? "bg-orange-500/10 text-orange-500"
                             : user.status === "SUSPENDED"
                             ? "bg-error/10 text-error"
+                            : user.status === "DELETED"
+                            ? "bg-gray-500/10 text-gray-500"
                             : "bg-accent/10 text-accent"
                         }`}
                       >
                         <option value="ACTIVE">Active</option>
                         <option value="INACTIVE">Inactive</option>
                         <option value="SUSPENDED">Suspended</option>
+                        <option value="DELETED">Deleted</option>
                       </select>
                     </td>
                     <td className="py-4 px-4">
                       <span className="text-sm text-foreground-secondary">
-                        {new Date(user.createdAt).toLocaleDateString()}
+                        {user.createdAt
+                          ? new Date(user.createdAt).toLocaleDateString()
+                          : "N/A"}
                       </span>
                     </td>
                     <td className="py-4 px-4">

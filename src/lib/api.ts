@@ -20,8 +20,8 @@ export interface User {
   email: string;
   phone?: string;
   role: string;
-  status: "ACTIVE" | "INACTIVE" | "SUSPENDED";
-  createdAt: string;
+  status: "ACTIVE" | "INACTIVE" | "SUSPENDED" | "DELETED";
+  createdAt: string; // ISO 8601 formatted date string
   avatarUrl?: string;
 }
 
@@ -590,7 +590,7 @@ export const adminApi = {
 
   updateUserStatus: async (
     userId: string,
-    status: "ACTIVE" | "INACTIVE" | "SUSPENDED"
+    status: "ACTIVE" | "INACTIVE" | "SUSPENDED" | "DELETED"
   ): Promise<User> => {
     const response = await api.put(`/api/v1/admin/users/${userId}/status`, {
       status,
