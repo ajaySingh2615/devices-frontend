@@ -256,15 +256,16 @@ export default function Home() {
           <h2 className="text-3xl font-bold font-display mb-4">
             Stay Updated with Latest Deals
           </h2>
-          <p className="text-primary-light mb-8">
+          <p className="text-white font-bold mb-8">
             Subscribe to our newsletter and be the first to know about new
             arrivals and exclusive offers
           </p>
+
           <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
             <input
               type="email"
               placeholder="Enter your email"
-              className="flex-1 px-4 py-3 rounded-lg text-foreground"
+              className="flex-1 px-4 py-3 rounded-lg bg-white text-black placeholder-gray-500 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
             />
             <Button className="bg-white text-primary hover:bg-gray-100">
               Subscribe
@@ -276,8 +277,10 @@ export default function Home() {
       {/* Footer */}
       <footer className="bg-foreground text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div>
+          {/* Grid with logo spanning 2 columns */}
+          <div className="grid grid-cols-1 md:grid-cols-6 gap-8 items-start">
+            {/* Logo + description (span 2 cols) */}
+            <div className="md:col-span-2">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
                   <span className="text-lg font-bold text-white">D</span>
@@ -292,6 +295,7 @@ export default function Home() {
               </p>
             </div>
 
+            {/* Company */}
             <div>
               <h3 className="font-semibold mb-4">Company</h3>
               <ul className="space-y-2 text-white/70">
@@ -318,6 +322,7 @@ export default function Home() {
               </ul>
             </div>
 
+            {/* Support */}
             <div>
               <h3 className="font-semibold mb-4">Support</h3>
               <ul className="space-y-2 text-white/70">
@@ -344,18 +349,19 @@ export default function Home() {
               </ul>
             </div>
 
+            {/* Legal */}
             <div>
               <h3 className="font-semibold mb-4">Legal</h3>
               <ul className="space-y-2 text-white/70">
                 <li>
-                  <Link href="/terms" className="hover:text-white">
+                  <a href="/terms" className="hover:text-white">
                     Terms of Service
-                  </Link>
+                  </a>
                 </li>
                 <li>
-                  <Link href="/privacy" className="hover:text-white">
+                  <a href="/privacy" className="hover:text-white">
                     Privacy Policy
-                  </Link>
+                  </a>
                 </li>
                 <li>
                   <a href="#" className="hover:text-white">
@@ -366,6 +372,7 @@ export default function Home() {
             </div>
           </div>
 
+          {/* Bottom copyright */}
           <div className="border-t border-white/20 mt-8 pt-8 text-center text-white/70">
             <p>&copy; 2024 DeviceHub. All rights reserved.</p>
           </div>

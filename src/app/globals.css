@@ -196,3 +196,13 @@ body {
 .animate-bounce {
   animation: bounce 1s infinite;
 }
+
+* {
+    box-sizing: border-box;
+    align-items: center;
+}
+
+footer .grid > div {
+  align-self: start;   
+}
+
