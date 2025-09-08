@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { wishlistApi, Wishlist } from "@/lib/api";
 import { Button } from "@/components/ui/Button";
@@ -17,6 +17,7 @@ export default function WishlistIcon({ className }: WishlistIconProps) {
   const { user, loading: authLoading } = useAuth();
   const [wishlist, setWishlist] = useState<Wishlist | null>(null);
   const [loading, setLoading] = useState(true);
+  const inFlight = useRef(false);
 
   useEffect(() => {
     if (!authLoading) {
@@ -31,7 +32,7 @@ export default function WishlistIcon({ className }: WishlistIconProps) {
     if (typeof window !== "undefined") {
       window.addEventListener("wishlistUpdated", handler);
       window.addEventListener("authStateChanged", handler);
-      window.addEventListener("focus", handler);
+      // removed window 'focus' listener to avoid frequent reloads
     }
     return () => {
       if (typeof window !== "undefined") {
@@ -43,9 +44,12 @@ export default function WishlistIcon({ className }: WishlistIconProps) {
   }, [authLoading, user]);
 
   const loadWishlist = async () => {
+    if (inFlight.current) return;
+    inFlight.current = true;
     if (!user) {
       setWishlist(null);
       setLoading(false);
+      inFlight.current = false;
       return;
     }
 
@@ -56,6 +60,7 @@ export default function WishlistIcon({ className }: WishlistIconProps) {
       console.error("Failed to load wishlist:", error);
       setWishlist(null);
     } finally {
+      inFlight.current = false;
       setLoading(false);
     }
   };

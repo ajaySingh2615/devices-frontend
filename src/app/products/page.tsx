@@ -535,7 +535,9 @@ function ProductCard({ product }: { product: Product }) {
       setTimeout(() => toast.dismiss("authLoading"), 800);
       return;
     }
-    if (!user) {
+    const hasToken =
+      typeof window !== "undefined" && !!localStorage.getItem("accessToken");
+    if (!user && !hasToken) {
       toast.error("Please login to add items to wishlist");
       return;
     }
@@ -601,9 +603,9 @@ function ProductCard({ product }: { product: Product }) {
       <CardContent className="p-0">
         {/* Image with Wishlist Button */}
         <div className="relative aspect-square bg-background-secondary rounded-t-lg flex items-center justify-center">
-          {product.images?.length ? (
+          {fullProduct.images?.length ? (
             <img
-              src={product.images[0].url}
+              src={fullProduct.images[0].url}
               alt={product.title}
               className="w-full h-full object-cover rounded-t-lg"
             />

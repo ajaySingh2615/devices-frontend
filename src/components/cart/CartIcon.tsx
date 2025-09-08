@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { cartApi, Cart } from "@/lib/api";
 import { Button } from "@/components/ui/Button";
@@ -15,6 +15,7 @@ export default function CartIcon({ className }: CartIconProps) {
   const router = useRouter();
   const [cart, setCart] = useState<Cart | null>(null);
   const [loading, setLoading] = useState(true);
+  const inFlight = useRef(false);
 
   useEffect(() => {
     loadCart();
@@ -23,18 +24,19 @@ export default function CartIcon({ className }: CartIconProps) {
     if (typeof window !== "undefined") {
       window.addEventListener("cartUpdated", handler);
       window.addEventListener("authStateChanged", handler);
-      window.addEventListener("focus", handler);
+      // removed window 'focus' listener to avoid noisy reloads
     }
     return () => {
       if (typeof window !== "undefined") {
         window.removeEventListener("cartUpdated", handler);
         window.removeEventListener("authStateChanged", handler);
-        window.removeEventListener("focus", handler);
       }
     };
   }, []);
 
   const loadCart = async () => {
+    if (inFlight.current) return;
+    inFlight.current = true;
     try {
       const cartData = await cartApi.getCart();
       setCart(cartData);
@@ -42,6 +44,7 @@ export default function CartIcon({ className }: CartIconProps) {
       console.error("Failed to load cart:", error);
       setCart(null);
     } finally {
+      inFlight.current = false;
       setLoading(false);
     }
   };

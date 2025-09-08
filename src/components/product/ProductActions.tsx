@@ -24,7 +24,10 @@ export default function ProductActions({
   const [updatingQty, setUpdatingQty] = useState<boolean>(false);
 
   useEffect(() => {
-    if (!authLoading && user) {
+    if (authLoading) return;
+    const hasToken =
+      typeof window !== "undefined" && !!localStorage.getItem("accessToken");
+    if (user || hasToken) {
       checkWishlistStatus();
       checkCartStatus();
     }
@@ -154,7 +157,9 @@ export default function ProductActions({
       setTimeout(() => toast.dismiss("authLoading"), 800);
       return;
     }
-    if (!user) {
+    const hasToken =
+      typeof window !== "undefined" && !!localStorage.getItem("accessToken");
+    if (!user && !hasToken) {
       toast.error("Please login to add items to wishlist");
       return;
     }
