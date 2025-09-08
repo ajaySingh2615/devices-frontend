@@ -6,6 +6,7 @@ import { wishlistApi, Wishlist } from "@/lib/api";
 import { Button } from "@/components/ui/Button";
 import { Heart } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
+import { useAuth } from "@/hooks/useAuth";
 
 interface WishlistIconProps {
   className?: string;
@@ -13,13 +14,20 @@ interface WishlistIconProps {
 
 export default function WishlistIcon({ className }: WishlistIconProps) {
   const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
   const [wishlist, setWishlist] = useState<Wishlist | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadWishlist();
+    if (!authLoading) {
+      loadWishlist();
+    }
 
-    const handler = () => loadWishlist();
+    const handler = () => {
+      if (!authLoading) {
+        loadWishlist();
+      }
+    };
     if (typeof window !== "undefined") {
       window.addEventListener("wishlistUpdated", handler);
       window.addEventListener("authStateChanged", handler);
@@ -32,14 +40,21 @@ export default function WishlistIcon({ className }: WishlistIconProps) {
         window.removeEventListener("focus", handler);
       }
     };
-  }, []);
+  }, [authLoading, user]);
 
   const loadWishlist = async () => {
+    if (!user) {
+      setWishlist(null);
+      setLoading(false);
+      return;
+    }
+
     try {
       const wishlistData = await wishlistApi.getWishlist();
       setWishlist(wishlistData);
     } catch (error) {
       console.error("Failed to load wishlist:", error);
+      setWishlist(null);
     } finally {
       setLoading(false);
     }

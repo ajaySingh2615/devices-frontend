@@ -26,6 +26,7 @@ export default function ProductActions({
   useEffect(() => {
     if (!authLoading && user) {
       checkWishlistStatus();
+      checkCartStatus();
     }
   }, [authLoading, user, variant.id]);
 
@@ -35,6 +36,18 @@ export default function ProductActions({
       setIsInWishlist(inWishlist);
     } catch (error) {
       console.error("Failed to check wishlist status:", error);
+    }
+  };
+
+  const checkCartStatus = async () => {
+    try {
+      const cart = await cartApi.getCart();
+      const cartItem = cart.items?.find(
+        (item) => item.variantId === variant.id
+      );
+      setQuantity(cartItem?.quantity || 0);
+    } catch (error) {
+      console.error("Failed to check cart status:", error);
     }
   };
 

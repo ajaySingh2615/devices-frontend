@@ -40,6 +40,7 @@ export default function CartIcon({ className }: CartIconProps) {
       setCart(cartData);
     } catch (error) {
       console.error("Failed to load cart:", error);
+      setCart(null);
     } finally {
       setLoading(false);
     }
