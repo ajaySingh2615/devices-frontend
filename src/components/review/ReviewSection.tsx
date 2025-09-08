@@ -39,9 +39,8 @@ export default function ReviewSection({
   });
 
   useEffect(() => {
-    if (!authLoading) {
-      loadReviews();
-    }
+    // Always load public reviews immediately; user-only call is conditional inside
+    loadReviews();
 
     const handler = (e: Event) => {
       const detail = (e as CustomEvent).detail as
@@ -59,7 +58,7 @@ export default function ReviewSection({
         window.removeEventListener("reviewsUpdated", handler as EventListener);
       }
     };
-  }, [productId, authLoading]);
+  }, [productId, authLoading, user?.id]);
 
   const loadReviews = async () => {
     try {
@@ -77,7 +76,7 @@ export default function ReviewSection({
       setUserReview(userReviewData);
     } catch (error) {
       console.error("Failed to load reviews:", error);
-      toast.error("Failed to load reviews");
+      // Do not block UI with a toast; keep page clean
     } finally {
       setLoading(false);
     }
