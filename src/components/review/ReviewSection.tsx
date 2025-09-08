@@ -25,7 +25,7 @@ export default function ReviewSection({
   productId,
   className,
 }: ReviewSectionProps) {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [summary, setSummary] = useState<ProductReviewSummary | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [userReview, setUserReview] = useState<Review | null>(null);
@@ -39,8 +39,10 @@ export default function ReviewSection({
   });
 
   useEffect(() => {
-    loadReviews();
-  }, [productId]);
+    if (!authLoading) {
+      loadReviews();
+    }
+  }, [productId, authLoading]);
 
   const loadReviews = async () => {
     try {
@@ -67,6 +69,11 @@ export default function ReviewSection({
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (authLoading) {
+      toast.loading("Checking your session...", { id: "authLoadingReview" });
+      setTimeout(() => toast.dismiss("authLoadingReview"), 800);
+      return;
+    }
     if (!user) {
       toast.error("Please login to write a review");
       return;
@@ -185,7 +192,11 @@ export default function ReviewSection({
 
               {/* Write Review Button */}
               <div className="flex items-center justify-center">
-                {user ? (
+                {authLoading ? (
+                  <p className="text-sm text-muted-foreground">
+                    Checking session…
+                  </p>
+                ) : user ? (
                   userReview ? (
                     <div className="text-center">
                       <p className="text-sm text-muted-foreground mb-2">

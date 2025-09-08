@@ -7,7 +7,7 @@ import React, {
   useContext,
   ReactNode,
 } from "react";
-import { User, authApi } from "@/lib/api";
+import { User, authApi, userApi } from "@/lib/api";
 
 interface AuthContextType {
   user: User | null;
@@ -24,8 +24,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem("accessToken");
-    setLoading(false);
+    const loadUser = async () => {
+      const token = localStorage.getItem("accessToken");
+      if (token) {
+        try {
+          // Fetch user profile to verify token and get user data
+          const userData = await userApi.getProfile();
+          setUser(userData);
+        } catch (error) {
+          console.error("Failed to load user profile:", error);
+          // Token might be invalid, clear it
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("refreshToken");
+        }
+      }
+      setLoading(false);
+    };
+
+    loadUser();
   }, []);
 
   const login = async (email: string, password: string) => {

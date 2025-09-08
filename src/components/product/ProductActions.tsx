@@ -16,16 +16,16 @@ export default function ProductActions({
   variant,
   className,
 }: ProductActionsProps) {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [isInWishlist, setIsInWishlist] = useState(false);
   const [loading, setLoading] = useState(false);
   const [wishlistLoading, setWishlistLoading] = useState(false);
 
   useEffect(() => {
-    if (user) {
+    if (!authLoading && user) {
       checkWishlistStatus();
     }
-  }, [user, variant.id]);
+  }, [authLoading, user, variant.id]);
 
   const checkWishlistStatus = async () => {
     try {
@@ -37,7 +37,7 @@ export default function ProductActions({
   };
 
   const handleAddToCart = async () => {
-    if (!variant.isActive) {
+    if (!variant.inventory?.inStock) {
       toast.error("This variant is not available");
       return;
     }
@@ -55,6 +55,12 @@ export default function ProductActions({
   };
 
   const handleToggleWishlist = async () => {
+    if (authLoading) {
+      // Avoid incorrect prompt while auth is resolving
+      toast.loading("Checking your session...", { id: "authLoading" });
+      setTimeout(() => toast.dismiss("authLoading"), 800);
+      return;
+    }
     if (!user) {
       toast.error("Please login to add items to wishlist");
       return;
@@ -85,14 +91,14 @@ export default function ProductActions({
         className="w-full"
         size="lg"
         onClick={handleAddToCart}
-        disabled={loading || !variant.isActive}
+        disabled={loading || !variant.inventory?.inStock}
       >
         {loading ? (
           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
         ) : (
           <ShoppingCart className="h-4 w-4 mr-2" />
         )}
-        {variant.isActive ? "Add to Cart" : "Out of Stock"}
+        {variant.inventory?.inStock ? "Add to Cart" : "Out of Stock"}
       </Button>
 
       <Button

@@ -190,15 +190,16 @@ api.interceptors.response.use(
           originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
           return api(originalRequest);
         } else {
-          console.log("No refresh token available, redirecting to login");
+          console.log("No refresh token available.");
           clearTokens();
-          window.location.href = "/auth/login";
+          // Do not force redirect here to avoid navigation loops
+          return Promise.reject(error);
         }
       } catch (refreshError) {
         console.error("Token refresh failed:", refreshError);
         clearTokens();
+        // Notify user once; avoid hard redirects that can cause loops
         toast.error("Session expired. Please login again.");
-        window.location.href = "/auth/login";
         return Promise.reject(refreshError);
       }
     }
