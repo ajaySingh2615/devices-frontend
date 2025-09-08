@@ -1090,6 +1090,30 @@ export const reviewApi = {
   },
 };
 
+// Admin Review API
+export const adminReviewApi = {
+  getPending: async (
+    page: number = 0,
+    size: number = 10
+  ): Promise<PageResponse<Review>> => {
+    const response = await api.get("/api/v1/reviews/admin/pending", {
+      params: { page, size },
+    });
+    return response.data;
+  },
+
+  moderate: async (
+    reviewId: string,
+    request: { status: "APPROVED" | "REJECTED"; reason?: string }
+  ): Promise<Review> => {
+    const response = await api.patch(
+      `/api/v1/reviews/admin/${reviewId}/moderate`,
+      request
+    );
+    return response.data;
+  },
+};
+
 // Health check API
 export const healthApi = {
   check: async () => {
