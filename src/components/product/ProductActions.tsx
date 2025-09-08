@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { toast } from "react-hot-toast";
 import { cartApi, wishlistApi, ProductVariant } from "@/lib/api";
 import { Button } from "@/components/ui/Button";
-import { Heart, ShoppingCart, Plus } from "lucide-react";
+import { Heart, ShoppingCart, Plus, Minus } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 interface ProductActionsProps {
@@ -20,6 +20,8 @@ export default function ProductActions({
   const [isInWishlist, setIsInWishlist] = useState(false);
   const [loading, setLoading] = useState(false);
   const [wishlistLoading, setWishlistLoading] = useState(false);
+  const [quantity, setQuantity] = useState<number>(0);
+  const [updatingQty, setUpdatingQty] = useState<boolean>(false);
 
   useEffect(() => {
     if (!authLoading && user) {
@@ -44,13 +46,91 @@ export default function ProductActions({
 
     try {
       setLoading(true);
-      await cartApi.addToCart({ variantId: variant.id, quantity: 1 });
+      const result = await cartApi.addToCart({
+        variantId: variant.id,
+        quantity: 1,
+      });
+      // Find quantity for this variant from returned cart and update local state
+      const currentItem = result.items?.find((i) => i.variantId === variant.id);
+      setQuantity(currentItem?.quantity || 1);
       toast.success("Added to cart");
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("cartUpdated"));
+      }
     } catch (error: any) {
       console.error("Failed to add to cart:", error);
       toast.error(error.response?.data?.message || "Failed to add to cart");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleIncrease = async () => {
+    try {
+      setUpdatingQty(true);
+      const result = await cartApi.addToCart({
+        variantId: variant.id,
+        quantity: 1,
+      });
+      const currentItem = result.items?.find((i) => i.variantId === variant.id);
+      setQuantity(currentItem?.quantity || quantity + 1);
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("cartUpdated"));
+      }
+    } catch (error: any) {
+      console.error("Failed to increase quantity:", error);
+      toast.error(error.response?.data?.message || "Failed to update quantity");
+    } finally {
+      setUpdatingQty(false);
+    }
+  };
+
+  const handleDecrease = async () => {
+    if (quantity <= 1) {
+      // Removing the only unit should remove the item
+      try {
+        setUpdatingQty(true);
+        // Need the cart item id; fetch cart and remove matching item
+        const currentCart = await cartApi.getCart();
+        const item = currentCart.items.find((i) => i.variantId === variant.id);
+        if (item) {
+          const result = await cartApi.removeFromCart(item.id);
+          setQuantity(0);
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(new CustomEvent("cartUpdated"));
+          }
+        }
+      } catch (error: any) {
+        console.error("Failed to decrease quantity:", error);
+        toast.error(
+          error.response?.data?.message || "Failed to update quantity"
+        );
+      } finally {
+        setUpdatingQty(false);
+      }
+      return;
+    }
+
+    try {
+      setUpdatingQty(true);
+      // Decrease by 1 using updateCartItem
+      const currentCart = await cartApi.getCart();
+      const item = currentCart.items.find((i) => i.variantId === variant.id);
+      if (item) {
+        const result = await cartApi.updateCartItem(item.id, {
+          quantity: item.quantity - 1,
+        });
+        const updated = result.items.find((i) => i.variantId === variant.id);
+        setQuantity(updated?.quantity || Math.max(0, quantity - 1));
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("cartUpdated"));
+        }
+      }
+    } catch (error: any) {
+      console.error("Failed to decrease quantity:", error);
+      toast.error(error.response?.data?.message || "Failed to update quantity");
+    } finally {
+      setUpdatingQty(false);
     }
   };
 
@@ -72,10 +152,16 @@ export default function ProductActions({
         await wishlistApi.removeFromWishlistByVariant(variant.id);
         setIsInWishlist(false);
         toast.success("Removed from wishlist");
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("wishlistUpdated"));
+        }
       } else {
         await wishlistApi.addToWishlist({ variantId: variant.id });
         setIsInWishlist(true);
         toast.success("Added to wishlist");
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("wishlistUpdated"));
+        }
       }
     } catch (error: any) {
       console.error("Failed to toggle wishlist:", error);
@@ -87,19 +173,40 @@ export default function ProductActions({
 
   return (
     <div className={`space-y-3 ${className}`}>
-      <Button
-        className="w-full"
-        size="lg"
-        onClick={handleAddToCart}
-        disabled={loading || !variant.inventory?.inStock}
-      >
-        {loading ? (
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-        ) : (
-          <ShoppingCart className="h-4 w-4 mr-2" />
-        )}
-        {variant.inventory?.inStock ? "Add to Cart" : "Out of Stock"}
-      </Button>
+      {quantity > 0 ? (
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={handleDecrease}
+            disabled={updatingQty}
+          >
+            <Minus className="h-4 w-4" />
+          </Button>
+          <div className="min-w-[3rem] text-center font-medium">{quantity}</div>
+          <Button
+            size="icon"
+            onClick={handleIncrease}
+            disabled={updatingQty || !variant.inventory?.inStock}
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
+        </div>
+      ) : (
+        <Button
+          className="w-full"
+          size="lg"
+          onClick={handleAddToCart}
+          disabled={loading || !variant.inventory?.inStock}
+        >
+          {loading ? (
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+          ) : (
+            <ShoppingCart className="h-4 w-4 mr-2" />
+          )}
+          {variant.inventory?.inStock ? "Add to Cart" : "Out of Stock"}
+        </Button>
+      )}
 
       <Button
         variant="outline"

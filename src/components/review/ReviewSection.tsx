@@ -42,6 +42,23 @@ export default function ReviewSection({
     if (!authLoading) {
       loadReviews();
     }
+
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail as
+        | { productId?: string }
+        | undefined;
+      if (!detail || detail.productId === productId) {
+        loadReviews();
+      }
+    };
+    if (typeof window !== "undefined") {
+      window.addEventListener("reviewsUpdated", handler as EventListener);
+    }
+    return () => {
+      if (typeof window !== "undefined") {
+        window.removeEventListener("reviewsUpdated", handler as EventListener);
+      }
+    };
   }, [productId, authLoading]);
 
   const loadReviews = async () => {
@@ -93,6 +110,11 @@ export default function ReviewSection({
       setShowReviewForm(false);
       setReviewForm({ rating: 5, title: "", content: "" });
       loadReviews(); // Reload reviews
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("reviewsUpdated", { detail: { productId } })
+        );
+      }
     } catch (error: any) {
       console.error("Failed to submit review:", error);
       toast.error(error.response?.data?.message || "Failed to submit review");

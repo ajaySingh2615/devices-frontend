@@ -18,6 +18,20 @@ export default function CartIcon({ className }: CartIconProps) {
 
   useEffect(() => {
     loadCart();
+
+    const handler = () => loadCart();
+    if (typeof window !== "undefined") {
+      window.addEventListener("cartUpdated", handler);
+      window.addEventListener("authStateChanged", handler);
+      window.addEventListener("focus", handler);
+    }
+    return () => {
+      if (typeof window !== "undefined") {
+        window.removeEventListener("cartUpdated", handler);
+        window.removeEventListener("authStateChanged", handler);
+        window.removeEventListener("focus", handler);
+      }
+    };
   }, []);
 
   const loadCart = async () => {
@@ -52,12 +66,12 @@ export default function CartIcon({ className }: CartIconProps) {
     >
       <div className="relative">
         <ShoppingCart className="h-5 w-5" />
-        {cart && cart.totalItems > 0 && (
+        {cart && cart.items && cart.items.length > 0 && (
           <Badge
             variant="destructive"
             className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs"
           >
-            {cart.totalItems > 99 ? "99+" : cart.totalItems}
+            {cart.items.length > 99 ? "99+" : cart.items.length}
           </Badge>
         )}
       </div>

@@ -18,6 +18,20 @@ export default function WishlistIcon({ className }: WishlistIconProps) {
 
   useEffect(() => {
     loadWishlist();
+
+    const handler = () => loadWishlist();
+    if (typeof window !== "undefined") {
+      window.addEventListener("wishlistUpdated", handler);
+      window.addEventListener("authStateChanged", handler);
+      window.addEventListener("focus", handler);
+    }
+    return () => {
+      if (typeof window !== "undefined") {
+        window.removeEventListener("wishlistUpdated", handler);
+        window.removeEventListener("authStateChanged", handler);
+        window.removeEventListener("focus", handler);
+      }
+    };
   }, []);
 
   const loadWishlist = async () => {
