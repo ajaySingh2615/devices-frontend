@@ -2,7 +2,7 @@ import axios from "axios";
 import { toast } from "react-hot-toast";
 
 // API Base URL - Use Next.js proxy to avoid CORS issues
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
 // Create axios instance
 const api = axios.create({
@@ -837,6 +837,255 @@ export const catalogApi = {
   getProductBySlug: async (slug: string): Promise<Product> => {
     const response = await api.get(`/api/v1/products/${slug}`);
     return response.data;
+  },
+};
+
+// Cart Types
+export interface CartItem {
+  id: string;
+  cartId: string;
+  variantId: string;
+  quantity: number;
+  priceSnapshot: number;
+  taxRateSnapshot: number;
+  subtotal: number;
+  taxAmount: number;
+  total: number;
+  createdAt: string;
+  updatedAt: string;
+  variant?: ProductVariant;
+}
+
+export interface Cart {
+  id: string;
+  userId?: string;
+  sessionId?: string;
+  items: CartItem[];
+  totalItems: number;
+  subtotal: number;
+  taxTotal: number;
+  grandTotal: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AddToCartRequest {
+  variantId: string;
+  quantity: number;
+}
+
+export interface UpdateCartItemRequest {
+  quantity: number;
+}
+
+// Wishlist Types
+export interface WishlistItem {
+  id: string;
+  wishlistId: string;
+  variantId: string;
+  createdAt: string;
+  variant?: ProductVariant;
+}
+
+export interface Wishlist {
+  id: string;
+  userId: string;
+  items: WishlistItem[];
+  totalItems: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AddToWishlistRequest {
+  variantId: string;
+}
+
+// Review Types
+export interface Review {
+  id: string;
+  userId: string;
+  productId: string;
+  rating: number;
+  title: string;
+  content?: string;
+  status: "PENDING" | "APPROVED" | "REJECTED";
+  createdAt: string;
+  updatedAt: string;
+  user?: {
+    id: string;
+    name: string;
+    email: string;
+    avatarUrl?: string;
+  };
+}
+
+export interface CreateReviewRequest {
+  productId: string;
+  rating: number;
+  title: string;
+  content?: string;
+}
+
+export interface UpdateReviewRequest {
+  rating?: number;
+  title?: string;
+  content?: string;
+}
+
+export interface ProductReviewSummary {
+  productId: string;
+  averageRating: number;
+  totalReviews: number;
+  ratingDistribution: Record<number, number>;
+  recentReviews: Review[];
+}
+
+// Cart API
+export const cartApi = {
+  getCart: async (sessionId?: string): Promise<Cart> => {
+    const params = sessionId ? { sessionId } : {};
+    const response = await api.get("/api/v1/cart", { params });
+    return response.data;
+  },
+
+  addToCart: async (
+    request: AddToCartRequest,
+    sessionId?: string
+  ): Promise<Cart> => {
+    const params = sessionId ? { sessionId } : {};
+    const response = await api.post("/api/v1/cart/items", request, { params });
+    return response.data;
+  },
+
+  updateCartItem: async (
+    itemId: string,
+    request: UpdateCartItemRequest,
+    sessionId?: string
+  ): Promise<Cart> => {
+    const params = sessionId ? { sessionId } : {};
+    const response = await api.patch(`/api/v1/cart/items/${itemId}`, request, {
+      params,
+    });
+    return response.data;
+  },
+
+  removeFromCart: async (itemId: string, sessionId?: string): Promise<Cart> => {
+    const params = sessionId ? { sessionId } : {};
+    const response = await api.delete(`/api/v1/cart/items/${itemId}`, {
+      params,
+    });
+    return response.data;
+  },
+
+  clearCart: async (sessionId?: string): Promise<Cart> => {
+    const params = sessionId ? { sessionId } : {};
+    const response = await api.delete("/api/v1/cart", { params });
+    return response.data;
+  },
+
+  mergeCarts: async (sessionId?: string): Promise<Cart> => {
+    const params = sessionId ? { sessionId } : {};
+    const response = await api.post("/api/v1/cart/merge", {}, { params });
+    return response.data;
+  },
+};
+
+// Wishlist API
+export const wishlistApi = {
+  getWishlist: async (): Promise<Wishlist> => {
+    const response = await api.get("/api/v1/wishlist");
+    return response.data;
+  },
+
+  addToWishlist: async (request: AddToWishlistRequest): Promise<Wishlist> => {
+    const response = await api.post("/api/v1/wishlist/items", request);
+    return response.data;
+  },
+
+  removeFromWishlist: async (itemId: string): Promise<Wishlist> => {
+    const response = await api.delete(`/api/v1/wishlist/items/${itemId}`);
+    return response.data;
+  },
+
+  removeFromWishlistByVariant: async (variantId: string): Promise<Wishlist> => {
+    const response = await api.delete(
+      `/api/v1/wishlist/items/variant/${variantId}`
+    );
+    return response.data;
+  },
+
+  clearWishlist: async (): Promise<Wishlist> => {
+    const response = await api.delete("/api/v1/wishlist");
+    return response.data;
+  },
+
+  isInWishlist: async (variantId: string): Promise<boolean> => {
+    const response = await api.get(`/api/v1/wishlist/check/${variantId}`);
+    return response.data;
+  },
+};
+
+// Review API
+export const reviewApi = {
+  createReview: async (request: CreateReviewRequest): Promise<Review> => {
+    const response = await api.post("/api/v1/reviews", request);
+    return response.data;
+  },
+
+  updateReview: async (
+    reviewId: string,
+    request: UpdateReviewRequest
+  ): Promise<Review> => {
+    const response = await api.patch(`/api/v1/reviews/${reviewId}`, request);
+    return response.data;
+  },
+
+  deleteReview: async (reviewId: string): Promise<void> => {
+    await api.delete(`/api/v1/reviews/${reviewId}`);
+  },
+
+  getProductReviews: async (
+    productId: string,
+    page: number = 0,
+    size: number = 10
+  ): Promise<PageResponse<Review>> => {
+    const response = await api.get(`/api/v1/reviews/product/${productId}`, {
+      params: { page, size },
+    });
+    return response.data;
+  },
+
+  getProductReviewSummary: async (
+    productId: string
+  ): Promise<ProductReviewSummary> => {
+    const response = await api.get(
+      `/api/v1/reviews/product/${productId}/summary`
+    );
+    return response.data;
+  },
+
+  getUserReviews: async (
+    page: number = 0,
+    size: number = 10
+  ): Promise<PageResponse<Review>> => {
+    const response = await api.get("/api/v1/reviews/my", {
+      params: { page, size },
+    });
+    return response.data;
+  },
+
+  getUserReviewForProduct: async (
+    productId: string
+  ): Promise<Review | null> => {
+    try {
+      const response = await api.get(`/api/v1/reviews/my/product/${productId}`);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        return null;
+      }
+      throw error;
+    }
   },
 };
 

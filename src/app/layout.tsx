@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Plus_Jakarta_Sans, JetBrains_Mono } from "next/font/google";
 import { Toaster } from "react-hot-toast";
 import Navigation from "@/components/layout/Navigation";
+import { AuthProvider } from "@/hooks/useAuth";
 import "./globals.css";
 
 const inter = Inter({
@@ -45,31 +46,33 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${plusJakarta.variable} ${jetbrainsMono.variable} antialiased`}
       >
-        <Navigation />
-        {children}
-        <Toaster
-          position="top-right"
-          toastOptions={{
-            duration: 4000,
-            style: {
-              background: "var(--surface)",
-              color: "var(--foreground)",
-              border: "1px solid var(--border)",
-            },
-            success: {
-              iconTheme: {
-                primary: "var(--secondary)",
-                secondary: "white",
+        <AuthProvider>
+          <Navigation />
+          {children}
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              duration: 4000,
+              style: {
+                background: "var(--surface)",
+                color: "var(--foreground)",
+                border: "1px solid var(--border)",
               },
-            },
-            error: {
-              iconTheme: {
-                primary: "var(--error)",
-                secondary: "white",
+              success: {
+                iconTheme: {
+                  primary: "var(--secondary)",
+                  secondary: "white",
+                },
               },
-            },
-          }}
-        />
+              error: {
+                iconTheme: {
+                  primary: "var(--error)",
+                  secondary: "white",
+                },
+              },
+            }}
+          />
+        </AuthProvider>
       </body>
     </html>
   );

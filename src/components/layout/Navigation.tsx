@@ -20,6 +20,8 @@ import {
   clearTokens,
   userApi,
 } from "@/lib/api";
+import CartIcon from "@/components/cart/CartIcon";
+import WishlistIcon from "@/components/wishlist/WishlistIcon";
 
 export default function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -159,17 +161,10 @@ export default function Navigation() {
             </Button>
 
             {/* Cart */}
-            <Button variant="ghost" size="sm" className="relative">
-              <HiShoppingCart className="w-5 h-5" />
-              <span className="absolute -top-1 -right-1 bg-primary text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                0
-              </span>
-            </Button>
+            <CartIcon />
 
             {/* Wishlist */}
-            <Button variant="ghost" size="sm">
-              <HiHeart className="w-5 h-5" />
-            </Button>
+            <WishlistIcon />
 
             {/* User Menu */}
             {isLoggedIn ? (

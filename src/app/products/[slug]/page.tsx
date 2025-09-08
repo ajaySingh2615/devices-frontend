@@ -14,6 +14,8 @@ import {
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { catalogApi, Product, ProductVariant } from "@/lib/api";
+import ProductActions from "@/components/product/ProductActions";
+import ReviewSection from "@/components/review/ReviewSection";
 
 export default function ProductDetailPage() {
   const [product, setProduct] = useState<Product | null>(null);
@@ -266,18 +268,7 @@ export default function ProductDetailPage() {
                   )}
                 </div>
 
-                <div className="flex space-x-4">
-                  <Button
-                    className="flex-1"
-                    disabled={!selectedVariant.inventory?.inStock}
-                  >
-                    <HiShoppingCart className="w-5 h-5 mr-2" />
-                    Add to Cart
-                  </Button>
-                  <Button variant="outline">
-                    <HiHeart className="w-5 h-5" />
-                  </Button>
-                </div>
+                <ProductActions variant={selectedVariant} />
               </div>
             )}
 
@@ -320,6 +311,11 @@ export default function ProductDetailPage() {
               </Card>
             )}
           </div>
+        </div>
+
+        {/* Reviews Section */}
+        <div className="mt-12">
+          <ReviewSection productId={product.id} />
         </div>
       </div>
     </div>
