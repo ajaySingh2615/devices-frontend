@@ -162,6 +162,20 @@ export default function ProductDescription({
         </div>
       </div>
 
+      {/* Additional Details (from description field) */}
+      {product.description && (
+        <div>
+          <h3 className="text-lg font-semibold text-foreground mb-4">
+            Additional Details
+          </h3>
+          <div className="bg-background-secondary rounded-lg p-4">
+            <p className="text-foreground-secondary whitespace-pre-line leading-relaxed">
+              {product.description}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Standard Disclaimer */}
       <div className="bg-warning/10 border border-warning/20 rounded-lg p-4">
         <div className="flex items-start space-x-3">
