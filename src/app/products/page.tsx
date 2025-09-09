@@ -20,6 +20,7 @@ import {
 import { Heart, ShoppingCart, Plus, Minus } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { cartApi, wishlistApi } from "@/lib/api";
+import ProductRating from "@/components/rating/ProductRating";
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<PageResponse<Product> | null>(null);
@@ -649,13 +650,12 @@ function ProductCard({ product }: { product: Product }) {
             {product.brand?.name} • {product.warrantyMonths} months warranty
           </p>
 
-          <div className="flex items-center mb-3">
-            <div className="flex">
-              {[...Array(5)].map((_, i) => (
-                <HiStar key={i} className="w-4 h-4 text-rating" />
-              ))}
-            </div>
-            <span className="text-sm text-foreground-muted ml-2">(4.5)</span>
+          <div className="mb-3">
+            <ProductRating
+              productId={product.id}
+              variant="compact"
+              showReviewCount={false}
+            />
           </div>
 
           {price ? (

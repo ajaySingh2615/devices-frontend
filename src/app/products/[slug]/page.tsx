@@ -16,6 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { catalogApi, Product, ProductVariant } from "@/lib/api";
 import ProductActions from "@/components/product/ProductActions";
 import ReviewSection from "@/components/review/ReviewSection";
+import ProductRating from "@/components/rating/ProductRating";
 
 export default function ProductDetailPage() {
   const [product, setProduct] = useState<Product | null>(null);
@@ -168,16 +169,13 @@ export default function ProductDetailPage() {
                 {conditionInfo.description}
               </p>
 
-              {/* Rating placeholder */}
-              <div className="flex items-center space-x-2 mb-4">
-                <div className="flex">
-                  {[...Array(5)].map((_, i) => (
-                    <HiStar key={i} className="w-5 h-5 text-rating" />
-                  ))}
-                </div>
-                <span className="text-sm text-foreground-secondary">
-                  (4.5) • 128 reviews
-                </span>
+              {/* Dynamic Rating */}
+              <div className="mb-4">
+                <ProductRating
+                  productId={product.id}
+                  variant="detailed"
+                  showReviewCount={true}
+                />
               </div>
             </div>
 
