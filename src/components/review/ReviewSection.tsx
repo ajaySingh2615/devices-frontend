@@ -156,182 +156,230 @@ export default function ReviewSection({
   }
 
   return (
-    <div className={`space-y-6 ${className}`}>
-      {/* Review Summary */}
+    <div className={`space-y-4 ${className}`}>
+      {/* Compact Review Summary */}
       {summary && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MessageSquare className="h-5 w-5" />
+        <div className="border border-border rounded-lg p-4 bg-background-secondary">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-lg font-semibold text-foreground">
               Customer Reviews
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Rating Overview */}
-              <div>
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="text-3xl font-bold">
-                    {summary.averageRating.toFixed(1)}
-                  </div>
-                  <div>
-                    {renderStars(Math.round(summary.averageRating))}
-                    <div className="text-sm text-muted-foreground">
-                      {summary.totalReviews}{" "}
-                      {summary.totalReviews === 1 ? "review" : "reviews"}
-                    </div>
-                  </div>
+            </h3>
+            {authLoading ? (
+              <span className="text-xs text-foreground-muted">Checking...</span>
+            ) : user ? (
+              userReview ? (
+                <div className="flex items-center gap-2">
+                  {renderStars(userReview.rating)}
+                  <span className="text-xs text-foreground-muted">
+                    Your review
+                  </span>
                 </div>
+              ) : (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setShowReviewForm(true)}
+                  className="text-xs px-3 py-1 h-7"
+                >
+                  Write Review
+                </Button>
+              )
+            ) : (
+              <span className="text-xs text-foreground-muted">
+                Login to review
+              </span>
+            )}
+          </div>
 
-                {/* Rating Distribution */}
-                <div className="space-y-2">
-                  {[5, 4, 3, 2, 1].map((rating) => {
-                    const count = summary.ratingDistribution[rating] || 0;
-                    const percentage =
-                      summary.totalReviews > 0
-                        ? (count / summary.totalReviews) * 100
-                        : 0;
-
-                    return (
-                      <div key={rating} className="flex items-center gap-2">
-                        <span className="text-sm w-8">{rating}</span>
-                        <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                        <div className="flex-1 bg-gray-200 rounded-full h-2">
-                          <div
-                            className="bg-yellow-400 h-2 rounded-full"
-                            style={{ width: `${percentage}%` }}
-                          />
-                        </div>
-                        <span className="text-sm text-muted-foreground w-8">
-                          {count}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
+          <div className="flex items-center gap-6">
+            {/* Rating Score */}
+            <div className="flex items-center gap-3">
+              <div className="text-2xl font-bold text-foreground">
+                {summary.averageRating.toFixed(1)}
               </div>
-
-              {/* Write Review Button */}
-              <div className="flex items-center justify-center">
-                {authLoading ? (
-                  <p className="text-sm text-muted-foreground">
-                    Checking session…
-                  </p>
-                ) : user ? (
-                  userReview ? (
-                    <div className="text-center">
-                      <p className="text-sm text-muted-foreground mb-2">
-                        You've already reviewed this product
-                      </p>
-                      <div className="flex items-center justify-center gap-2">
-                        {renderStars(userReview.rating)}
-                        <span className="text-sm">{userReview.title}</span>
-                      </div>
-                    </div>
-                  ) : (
-                    <Button onClick={() => setShowReviewForm(true)}>
-                      Write a Review
-                    </Button>
-                  )
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    Login to write a review
-                  </p>
-                )}
+              <div>
+                {renderStars(Math.round(summary.averageRating))}
+                <div className="text-xs text-foreground-muted mt-1">
+                  {summary.totalReviews}{" "}
+                  {summary.totalReviews === 1 ? "review" : "reviews"}
+                </div>
               </div>
             </div>
-          </CardContent>
-        </Card>
+
+            {/* Compact Rating Distribution */}
+            <div className="flex-1 max-w-xs">
+              <div className="space-y-1">
+                {[5, 4, 3, 2, 1].map((rating) => {
+                  const count = summary.ratingDistribution[rating] || 0;
+                  const percentage =
+                    summary.totalReviews > 0
+                      ? (count / summary.totalReviews) * 100
+                      : 0;
+
+                  return (
+                    <div
+                      key={rating}
+                      className="flex items-center gap-2 text-xs"
+                    >
+                      <span className="w-4">{rating}</span>
+                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                      <div className="flex-1 bg-gray-200 rounded-full h-1.5">
+                        <div
+                          className="bg-yellow-400 h-1.5 rounded-full"
+                          style={{ width: `${percentage}%` }}
+                        />
+                      </div>
+                      <span className="w-6 text-foreground-muted">{count}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
-      {/* Review Form */}
+      {/* Compact Review Form */}
       {showReviewForm && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Write a Review</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmitReview} className="space-y-4">
-              <div>
-                <Label htmlFor="rating">Rating</Label>
-                <div className="mt-2">
-                  {renderStars(reviewForm.rating, true)}
-                </div>
-              </div>
+        <div className="border border-border rounded-lg p-4 bg-background-secondary">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-base font-semibold text-foreground">
+              Write a Review
+            </h3>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowReviewForm(false)}
+              className="text-xs px-2 py-1 h-6"
+            >
+              ✕
+            </Button>
+          </div>
 
-              <div>
-                <Label htmlFor="title">Title</Label>
-                <Input
-                  id="title"
-                  value={reviewForm.title}
-                  onChange={(e) =>
-                    setReviewForm({ ...reviewForm, title: e.target.value })
-                  }
-                  placeholder="Summarize your experience"
-                  required
-                />
-              </div>
+          <form onSubmit={handleSubmitReview} className="space-y-3">
+            <div>
+              <Label htmlFor="rating" className="text-sm">
+                Rating
+              </Label>
+              <div className="mt-1">{renderStars(reviewForm.rating, true)}</div>
+            </div>
 
-              <div>
-                <Label htmlFor="content">Review</Label>
-                <Textarea
-                  id="content"
-                  value={reviewForm.content}
-                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-                    setReviewForm({ ...reviewForm, content: e.target.value })
-                  }
-                  placeholder="Tell us about your experience with this product"
-                  rows={4}
-                />
-              </div>
+            <div>
+              <Label htmlFor="title" className="text-sm">
+                Title
+              </Label>
+              <Input
+                id="title"
+                value={reviewForm.title}
+                onChange={(e) =>
+                  setReviewForm({ ...reviewForm, title: e.target.value })
+                }
+                placeholder="Summarize your experience"
+                required
+                className="h-8 text-sm"
+              />
+            </div>
 
-              <div className="flex gap-2">
-                <Button type="submit" disabled={submitting}>
-                  {submitting ? "Submitting..." : "Submit Review"}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setShowReviewForm(false)}
-                >
-                  Cancel
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+            <div>
+              <Label htmlFor="content" className="text-sm">
+                Review
+              </Label>
+              <Textarea
+                id="content"
+                value={reviewForm.content}
+                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                  setReviewForm({ ...reviewForm, content: e.target.value })
+                }
+                placeholder="Tell us about your experience with this product"
+                rows={3}
+                className="text-sm"
+              />
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <Button
+                type="submit"
+                disabled={submitting}
+                size="sm"
+                className="text-xs px-4 py-1 h-7"
+              >
+                {submitting ? "Submitting..." : "Submit Review"}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowReviewForm(false)}
+                className="text-xs px-4 py-1 h-7"
+              >
+                Cancel
+              </Button>
+            </div>
+          </form>
+        </div>
       )}
 
-      {/* Reviews List */}
+      {/* Compact Reviews List */}
       {reviews.length > 0 && (
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Recent Reviews</h3>
-          {reviews.map((review) => (
-            <Card key={review.id}>
-              <CardContent className="p-4">
-                <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
-                    <User className="h-5 w-5 text-muted-foreground" />
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-base font-semibold text-foreground">
+              Recent Reviews
+            </h3>
+            <span className="text-xs text-foreground-muted">
+              Showing {reviews.length} of {summary?.totalReviews || 0}
+            </span>
+          </div>
+
+          <div className="space-y-3">
+            {reviews.slice(0, 3).map((review) => (
+              <div
+                key={review.id}
+                className="border-b border-border pb-3 last:border-b-0"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
+                    <User className="h-4 w-4 text-primary" />
                   </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="font-semibold">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-medium text-sm text-foreground">
                         {review.user?.name || "Anonymous"}
                       </span>
                       {renderStars(review.rating)}
-                      <span className="text-sm text-muted-foreground">
+                      <span className="text-xs text-foreground-muted">
                         {new Date(review.createdAt).toLocaleDateString()}
                       </span>
                     </div>
-                    <h4 className="font-medium mb-2">{review.title}</h4>
+                    <h4 className="font-medium text-sm text-foreground mb-1 line-clamp-1">
+                      {review.title}
+                    </h4>
                     {review.content && (
-                      <p className="text-muted-foreground">{review.content}</p>
+                      <p className="text-xs text-foreground-secondary line-clamp-2 leading-relaxed">
+                        {review.content}
+                      </p>
                     )}
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
+              </div>
+            ))}
+          </div>
+
+          {reviews.length > 3 && (
+            <div className="text-center pt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-xs px-4 py-1 h-7"
+                onClick={() => {
+                  /* TODO: Implement view all reviews */
+                }}
+              >
+                View All {summary?.totalReviews || 0} Reviews
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </div>
