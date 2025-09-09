@@ -94,20 +94,30 @@ export default function CartPage() {
 
   if (!cart || cart.items.length === 0) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-2xl mx-auto text-center">
-          <div className="mb-8">
-            <ShoppingBag className="h-24 w-24 text-muted-foreground mx-auto mb-4" />
-            <h1 className="text-3xl font-bold mb-2">Your cart is empty</h1>
-            <p className="text-muted-foreground mb-8">
-              Looks like you haven't added any items to your cart yet.
-            </p>
-            <Link href="/products">
-              <Button size="lg">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Continue Shopping
-              </Button>
-            </Link>
+      <div className="min-h-screen bg-background-secondary">
+        <div className="container mx-auto px-4 py-12">
+          <div className="max-w-md mx-auto text-center">
+            <div className="mb-8">
+              <div className="w-24 h-24 bg-surface rounded-full flex items-center justify-center mx-auto mb-6 border border-border">
+                <ShoppingBag className="h-12 w-12 text-foreground-muted" />
+              </div>
+              <h1 className="text-2xl font-bold text-foreground mb-2">
+                Your cart is empty
+              </h1>
+              <p className="text-foreground-muted mb-8 text-sm">
+                Looks like you haven't added any items to your cart yet. Start
+                shopping to add items to your cart.
+              </p>
+              <Link href="/products">
+                <Button
+                  size="lg"
+                  className="bg-primary hover:bg-primary-dark text-white"
+                >
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Continue Shopping
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </div>
@@ -115,68 +125,124 @@ export default function CartPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold">Shopping Cart</h1>
-        <div className="flex items-center gap-4">
-          <span className="text-muted-foreground">
-            {cart.totalItems} {cart.totalItems === 1 ? "item" : "items"}
-          </span>
-          <Button variant="outline" onClick={clearCart}>
+    <div className="min-h-screen bg-background-secondary">
+      <div className="container mx-auto px-4 py-6">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">
+              Shopping Cart
+            </h1>
+            <p className="text-sm text-foreground-muted mt-1">
+              {cart.totalItems} {cart.totalItems === 1 ? "item" : "items"} in
+              your cart
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={clearCart}
+            className="text-xs px-3 py-1 h-7"
+          >
             Clear Cart
           </Button>
         </div>
-      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Cart Items */}
-        <div className="lg:col-span-2 space-y-4">
-          {cart.items.map((item) => (
-            <CartItemCard
-              key={item.id}
-              item={item}
-              onUpdateQuantity={updateQuantity}
-              onRemove={removeItem}
-              updating={updating === item.id}
-            />
-          ))}
-        </div>
-
-        {/* Order Summary */}
-        <div className="lg:col-span-1">
-          <Card>
-            <CardHeader>
-              <CardTitle>Order Summary</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex justify-between">
-                <span>Subtotal</span>
-                <span>₹{cart.subtotal.toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Tax</span>
-                <span>₹{cart.taxTotal.toLocaleString()}</span>
-              </div>
-              <div className="border-t pt-4">
-                <div className="flex justify-between text-lg font-semibold">
-                  <span>Total</span>
-                  <span>₹{cart.grandTotal.toLocaleString()}</span>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Cart Items */}
+          <div className="lg:col-span-2">
+            <div className="bg-surface rounded-lg border border-border">
+              {/* Cart Header */}
+              <div className="px-4 py-3 border-b border-border bg-background-secondary rounded-t-lg">
+                <div className="flex items-center justify-between text-sm font-medium text-foreground-secondary">
+                  <span>Product Details</span>
+                  <div className="flex items-center gap-8">
+                    <span>Quantity</span>
+                    <span>Price</span>
+                    <span>Total</span>
+                  </div>
                 </div>
               </div>
-              <Button
-                className="w-full"
-                size="lg"
-                onClick={() => router.push("/checkout")}
-              >
-                Proceed to Checkout
-              </Button>
-              <Link href="/products">
-                <Button variant="outline" className="w-full">
-                  Continue Shopping
+
+              {/* Cart Items */}
+              <div className="divide-y divide-border">
+                {cart.items.map((item) => (
+                  <CartItemCard
+                    key={item.id}
+                    item={item}
+                    onUpdateQuantity={updateQuantity}
+                    onRemove={removeItem}
+                    updating={updating === item.id}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Order Summary */}
+          <div className="lg:col-span-1">
+            <div className="bg-surface rounded-lg border border-border p-4 sticky top-4">
+              <h3 className="text-lg font-semibold text-foreground mb-4">
+                Order Summary
+              </h3>
+
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-foreground-secondary">
+                    Subtotal ({cart.totalItems} items)
+                  </span>
+                  <span className="text-foreground">
+                    ₹{cart.subtotal.toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-foreground-secondary">
+                    Delivery Charges
+                  </span>
+                  <span className="text-success">FREE</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-foreground-secondary">Tax</span>
+                  <span className="text-foreground">
+                    ₹{cart.taxTotal.toLocaleString()}
+                  </span>
+                </div>
+                <div className="border-t border-border pt-3">
+                  <div className="flex justify-between text-base font-semibold">
+                    <span className="text-foreground">Total Amount</span>
+                    <span className="text-foreground">
+                      ₹{cart.grandTotal.toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6 space-y-3">
+                <Button
+                  className="w-full bg-primary hover:bg-primary-dark text-white"
+                  size="lg"
+                  onClick={() => router.push("/checkout")}
+                >
+                  Proceed to Checkout
                 </Button>
-              </Link>
-            </CardContent>
-          </Card>
+                <Link href="/products">
+                  <Button variant="outline" className="w-full">
+                    Continue Shopping
+                  </Button>
+                </Link>
+              </div>
+
+              {/* Security Badge */}
+              <div className="mt-4 pt-4 border-t border-border">
+                <div className="flex items-center gap-2 text-xs text-foreground-muted">
+                  <div className="w-4 h-4 bg-success rounded-full flex items-center justify-center">
+                    <span className="text-white text-xs">✓</span>
+                  </div>
+                  <span>Secure checkout with SSL encryption</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -205,67 +271,95 @@ function CartItemCard({
   };
 
   return (
-    <Card>
-      <CardContent className="p-6">
-        <div className="flex items-start gap-4">
-          {/* Product Image */}
-          <div className="relative w-20 h-20 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+    <div className="p-4 hover:bg-background-secondary/50 transition-colors">
+      <div className="flex items-center gap-4">
+        {/* Product Image */}
+        <div className="relative w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+          {item.product?.images?.[0]?.url ? (
+            <Image
+              src={item.product.images[0].url}
+              alt={item.product.title}
+              fill
+              sizes="64px"
+              className="object-cover"
+            />
+          ) : (
             <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-              <ShoppingBag className="h-8 w-8" />
+              <ShoppingBag className="h-6 w-6" />
             </div>
-          </div>
+          )}
+        </div>
 
-          {/* Product Details */}
-          <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-lg mb-1">Product Variant</h3>
-            <div className="text-sm text-muted-foreground mb-2">
-              {item.variant?.color && (
-                <span className="mr-4">Color: {item.variant.color}</span>
-              )}
-              {item.variant?.storageGb && (
-                <span className="mr-4">{item.variant.storageGb}GB Storage</span>
-              )}
-              {item.variant?.ramGb && <span>{item.variant.ramGb}GB RAM</span>}
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="text-lg font-semibold">
-                ₹{item.priceSnapshot.toLocaleString()}
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleQuantityChange(quantity - 1)}
-                  disabled={updating || quantity <= 1}
-                >
-                  <Minus className="h-4 w-4" />
-                </Button>
-                <span className="w-12 text-center">{quantity}</span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleQuantityChange(quantity + 1)}
-                  disabled={updating}
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onRemove(item.id)}
-                  disabled={updating}
-                  className="ml-2 text-red-600 hover:text-red-700"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-            <div className="text-sm text-muted-foreground mt-2">
-              Total: ₹{item.total.toLocaleString()}
-            </div>
+        {/* Product Details */}
+        <div className="flex-1 min-w-0">
+          <h3 className="font-medium text-sm text-foreground line-clamp-2 mb-1">
+            {item.product?.title || "Product Variant"}
+          </h3>
+          <div className="text-xs text-foreground-muted mb-2">
+            {item.variant?.color && (
+              <span className="mr-3">Color: {item.variant.color}</span>
+            )}
+            {item.variant?.storageGb && (
+              <span className="mr-3">{item.variant.storageGb}GB Storage</span>
+            )}
+            {item.variant?.ramGb && <span>{item.variant.ramGb}GB RAM</span>}
+          </div>
+          <div className="text-xs text-foreground-muted">
+            {item.product?.brand?.name && `Brand: ${item.product.brand.name}`}
+            {item.variant?.sku && ` • SKU: ${item.variant.sku}`}
           </div>
         </div>
-      </CardContent>
-    </Card>
+
+        {/* Quantity Controls */}
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleQuantityChange(quantity - 1)}
+            disabled={updating || quantity <= 1}
+            className="w-8 h-8 p-0"
+          >
+            <Minus className="h-3 w-3" />
+          </Button>
+          <span className="w-8 text-center text-sm font-medium">
+            {quantity}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleQuantityChange(quantity + 1)}
+            disabled={updating}
+            className="w-8 h-8 p-0"
+          >
+            <Plus className="h-3 w-3" />
+          </Button>
+        </div>
+
+        {/* Price */}
+        <div className="text-right min-w-[80px]">
+          <div className="text-sm font-medium text-foreground">
+            ₹{item.priceSnapshot.toLocaleString()}
+          </div>
+        </div>
+
+        {/* Total */}
+        <div className="text-right min-w-[80px]">
+          <div className="text-sm font-semibold text-foreground">
+            ₹{item.total.toLocaleString()}
+          </div>
+        </div>
+
+        {/* Remove Button */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => onRemove(item.id)}
+          disabled={updating}
+          className="w-8 h-8 p-0 text-foreground-muted hover:text-error"
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
   );
 }

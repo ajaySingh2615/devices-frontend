@@ -855,6 +855,7 @@ export interface CartItem {
   createdAt: string;
   updatedAt: string;
   variant?: ProductVariant;
+  product?: Product;
 }
 
 export interface Cart {

@@ -41,7 +41,7 @@ const nextConfig: NextConfig = {
 
   // Handle images and static assets
   images: {
-    domains: ["localhost", "picsum.photos"],
+    domains: ["localhost", "picsum.photos", "res.cloudinary.com"],
     dangerouslyAllowSVG: true,
   },
 
