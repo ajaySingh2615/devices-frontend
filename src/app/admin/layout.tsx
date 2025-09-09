@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   HiHome,
   HiViewGrid,
@@ -41,10 +41,11 @@ export default function AdminLayout({
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
 
   const handleLogout = () => {
     clearTokens();
-    window.location.href = "/auth/login";
+    router.push("/auth/login");
   };
 
   return (

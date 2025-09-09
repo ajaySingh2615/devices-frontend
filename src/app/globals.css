@@ -1,95 +1,55 @@
 @import "tailwindcss";
 
-:root {
-  /* Brand Colors - Tech & Trust Focused */
-  --primary: #2563eb; /* Blue 600 - Trust & reliability */
-  --primary-light: #3b82f6; /* Blue 500 */
-  --primary-dark: #1d4ed8; /* Blue 700 */
+@theme {
+  /* Brand Colors */
+  --color-primary: #2563eb;
+  --color-primary-light: #3b82f6;
+  --color-primary-dark: #1d4ed8;
 
-  --secondary: #059669; /* Emerald 600 - Success & quality */
-  --secondary-light: #10b981; /* Emerald 500 */
-  --secondary-dark: #047857; /* Emerald 700 */
+  --color-secondary: #059669;
+  --color-secondary-light: #10b981;
+  --color-secondary-dark: #047857;
 
-  --accent: #f59e0b; /* Amber 500 - Attention & deals */
-  --accent-light: #fbbf24; /* Amber 400 */
-  --accent-dark: #d97706; /* Amber 600 */
+  --color-accent: #f59e0b;
+  --color-accent-light: #fbbf24;
+  --color-accent-dark: #d97706;
 
-  /* Neutral Colors */
-  --background: #ffffff;
-  --background-secondary: #f8fafc; /* Slate 50 */
-  --background-tertiary: #f1f5f9; /* Slate 100 */
+  /* Background Colors */
+  --color-background: #ffffff;
+  --color-background-secondary: #f8fafc;
+  --color-background-tertiary: #f1f5f9;
 
-  --foreground: #0f172a; /* Slate 900 */
-  --foreground-secondary: #334155; /* Slate 700 */
-  --foreground-muted: #64748b; /* Slate 500 */
-  --foreground-light: #94a3b8; /* Slate 400 */
+  /* Foreground Colors */
+  --color-foreground: #0f172a;
+  --color-foreground-secondary: #334155;
+  --color-foreground-muted: #64748b;
+  --color-foreground-light: #94a3b8;
 
   /* Surface Colors */
-  --surface: #ffffff;
-  --surface-hover: #f8fafc;
-  --surface-pressed: #f1f5f9;
+  --color-surface: #ffffff;
+  --color-surface-hover: #f8fafc;
+  --color-surface-pressed: #f1f5f9;
 
   /* Border Colors */
-  --border: #e2e8f0; /* Slate 200 */
-  --border-light: #f1f5f9; /* Slate 100 */
-  --border-dark: #cbd5e1; /* Slate 300 */
+  --color-border: #e2e8f0;
+  --color-border-light: #f1f5f9;
+  --color-border-dark: #cbd5e1;
 
   /* Status Colors */
-  --success: #059669; /* Emerald 600 */
-  --warning: #f59e0b; /* Amber 500 */
-  --error: #dc2626; /* Red 600 */
-  --info: #2563eb; /* Blue 600 */
+  --color-success: #059669;
+  --color-warning: #f59e0b;
+  --color-error: #dc2626;
+  --color-info: #2563eb;
 
-  /* Special Colors for E-commerce */
-  --price: #059669; /* Green for prices */
-  --discount: #dc2626; /* Red for discounts */
-  --rating: #f59e0b; /* Amber for ratings */
-}
-
-@theme inline {
-  /* Colors */
-  --color-primary: var(--primary);
-  --color-primary-light: var(--primary-light);
-  --color-primary-dark: var(--primary-dark);
-
-  --color-secondary: var(--secondary);
-  --color-secondary-light: var(--secondary-light);
-  --color-secondary-dark: var(--secondary-dark);
-
-  --color-accent: var(--accent);
-  --color-accent-light: var(--accent-light);
-  --color-accent-dark: var(--accent-dark);
-
-  --color-background: var(--background);
-  --color-background-secondary: var(--background-secondary);
-  --color-background-tertiary: var(--background-tertiary);
-
-  --color-foreground: var(--foreground);
-  --color-foreground-secondary: var(--foreground-secondary);
-  --color-foreground-muted: var(--foreground-muted);
-  --color-foreground-light: var(--foreground-light);
-
-  --color-surface: var(--surface);
-  --color-surface-hover: var(--surface-hover);
-  --color-surface-pressed: var(--surface-pressed);
-
-  --color-border: var(--border);
-  --color-border-light: var(--border-light);
-  --color-border-dark: var(--border-dark);
-
-  --color-success: var(--success);
-  --color-warning: var(--warning);
-  --color-error: var(--error);
-  --color-info: var(--info);
-
-  --color-price: var(--price);
-  --color-discount: var(--discount);
-  --color-rating: var(--rating);
+  /* E-commerce Colors */
+  --color-price: #059669;
+  --color-discount: #dc2626;
+  --color-rating: #f59e0b;
 
   /* Fonts */
-  --font-sans: var(--font-inter);
-  --font-display: var(--font-plus-jakarta);
-  --font-mono: var(--font-jetbrains-mono);
+  --font-sans: Inter, system-ui, -apple-system, sans-serif;
+  --font-display: Plus Jakarta Sans, system-ui, -apple-system, sans-serif;
+  --font-mono: JetBrains Mono, monospace;
 
   /* Shadows */
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
@@ -198,11 +158,9 @@ body {
 }
 
 * {
-    box-sizing: border-box;
-    align-items: center;
+  box-sizing: border-box;
 }
 
 footer .grid > div {
-  align-self: start;   
+  align-self: start;
 }
-
