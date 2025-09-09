@@ -18,6 +18,7 @@ import ProductActions from "@/components/product/ProductActions";
 import ReviewSection from "@/components/review/ReviewSection";
 import ProductRating from "@/components/rating/ProductRating";
 import RelatedProducts from "@/components/product/RelatedProducts";
+import ProductDescription from "@/components/product/ProductDescription";
 
 export default function ProductDetailPage() {
   const [product, setProduct] = useState<Product | null>(null);
@@ -296,19 +297,15 @@ export default function ProductDetailPage() {
               </div>
             </div>
 
-            {/* Description */}
-            {product.description && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Description</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-foreground-secondary whitespace-pre-line">
-                    {product.description}
-                  </p>
-                </CardContent>
-              </Card>
-            )}
+            {/* Product Description */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Product Details</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ProductDescription product={product} />
+              </CardContent>
+            </Card>
           </div>
         </div>
 
