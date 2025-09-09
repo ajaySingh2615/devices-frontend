@@ -77,8 +77,8 @@ html {
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--color-background);
+  color: var(--color-foreground);
   font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
@@ -91,28 +91,55 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--background-secondary);
+  background: var(--color-background-secondary);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--border-dark);
+  background: var(--color-border-dark);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--foreground-muted);
+  background: var(--color-foreground-muted);
 }
 
 /* Focus styles */
 :focus-visible {
-  outline: 2px solid var(--primary);
+  outline: 2px solid var(--color-primary);
   outline-offset: 2px;
 }
 
 /* Selection styles */
 ::selection {
-  background: var(--primary-light);
-  color: white;
+  background: #2563eb;
+  color: #ffffff;
+}
+
+::-moz-selection {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+/* Ensure proper text contrast */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Fix any potential color inheritance issues */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: var(--color-foreground);
+}
+
+p,
+span,
+div {
+  color: inherit;
 }
 
 /* Loading animation */
