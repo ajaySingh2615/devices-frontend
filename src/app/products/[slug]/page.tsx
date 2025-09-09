@@ -17,6 +17,7 @@ import { catalogApi, Product, ProductVariant } from "@/lib/api";
 import ProductActions from "@/components/product/ProductActions";
 import ReviewSection from "@/components/review/ReviewSection";
 import ProductRating from "@/components/rating/ProductRating";
+import RelatedProducts from "@/components/product/RelatedProducts";
 
 export default function ProductDetailPage() {
   const [product, setProduct] = useState<Product | null>(null);
@@ -315,6 +316,9 @@ export default function ProductDetailPage() {
         <div className="mt-12">
           <ReviewSection productId={product.id} />
         </div>
+
+        {/* Related Products Section */}
+        <RelatedProducts currentProduct={product} limit={8} />
       </div>
     </div>
   );
