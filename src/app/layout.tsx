@@ -54,19 +54,19 @@ export default function RootLayout({
             toastOptions={{
               duration: 4000,
               style: {
-                background: "var(--surface)",
-                color: "var(--foreground)",
-                border: "1px solid var(--border)",
+                background: "var(--color-surface)",
+                color: "var(--color-foreground)",
+                border: "1px solid var(--color-border)",
               },
               success: {
                 iconTheme: {
-                  primary: "var(--secondary)",
+                  primary: "var(--color-success)",
                   secondary: "white",
                 },
               },
               error: {
                 iconTheme: {
-                  primary: "var(--error)",
+                  primary: "var(--color-error)",
                   secondary: "white",
                 },
               },
