@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { HiStar, HiShoppingCart, HiHeart } from "react-icons/hi";
 import { Heart, ShoppingCart, Plus, Minus } from "lucide-react";
 import { toast } from "react-hot-toast";
@@ -201,6 +202,7 @@ function RelatedProductCard({
   user: any;
   authLoading: boolean;
 }) {
+  const router = useRouter();
   const [isInWishlist, setIsInWishlist] = useState(false);
   const [quantity, setQuantity] = useState<number>(0);
   const [loading, setLoading] = useState(false);
@@ -500,7 +502,7 @@ function RelatedProductCard({
                     </div>
                     <Button
                       size="sm"
-                      onClick={() => (window.location.href = "/cart")}
+                      onClick={() => router.push("/cart")}
                       className="text-xs"
                     >
                       View Cart

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   HiShoppingBag,
   HiShieldCheck,
@@ -15,6 +16,7 @@ import { Card, CardContent } from "@/components/ui/Card";
 import { catalogApi, Category, Product } from "@/lib/api";
 
 export default function Home() {
+  const router = useRouter();
   const [categories, setCategories] = useState<Category[]>([]);
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -216,10 +218,7 @@ export default function Home() {
                 Handpicked deals you won't want to miss
               </p>
             </div>
-            <Button
-              variant="outline"
-              onClick={() => (window.location.href = "/products")}
-            >
+            <Button variant="outline" onClick={() => router.push("/products")}>
               View All
               <HiArrowRight className="ml-2 w-4 h-4" />
             </Button>
