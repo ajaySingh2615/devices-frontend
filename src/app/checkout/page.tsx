@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import {
   addressApi,
   AddressDto,
+  cartApi,
   checkoutApi,
   CheckoutSummaryRequest,
   CheckoutSummaryResponse,
@@ -27,6 +28,7 @@ export default function CheckoutPage() {
   const [showAddressForm, setShowAddressForm] = useState<boolean>(false);
   const [editing, setEditing] = useState<AddressDto | null>(null);
   const [showOrderSummary, setShowOrderSummary] = useState<boolean>(false);
+  const [showEmptyCartModal, setShowEmptyCartModal] = useState<boolean>(false);
   const [form, setForm] = useState<CreateAddressRequest>({
     name: "",
     phone: "",
@@ -72,6 +74,43 @@ export default function CheckoutPage() {
       toast.error(e?.message || "Failed to fetch summary");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const updateQuantity = async (itemId: string, newQuantity: number) => {
+    if (newQuantity < 1) return;
+
+    try {
+      await cartApi.updateCartItem(itemId, { quantity: newQuantity });
+      // Refresh the summary after quantity update
+      await fetchSummary();
+      toast.success("Quantity updated");
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to update quantity");
+    }
+  };
+
+  const removeItem = async (itemId: string) => {
+    try {
+      await cartApi.removeFromCart(itemId);
+      // Refresh the summary after removal
+      const body: CheckoutSummaryRequest = {
+        addressId: selectedAddressId,
+        couponCode: couponCode || undefined,
+        paymentMethod: "RAZORPAY",
+      };
+      const res = await checkoutApi.summarize(body);
+      setSummary(res);
+
+      // Check if cart is now empty
+      if (res.items.length === 0) {
+        setShowEmptyCartModal(true);
+        setShowOrderSummary(false);
+      } else {
+        toast.success("Item removed from cart");
+      }
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to remove item");
     }
   };
 
@@ -364,10 +403,11 @@ export default function CheckoutPage() {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => {
-                              /* TODO: decrease quantity */
-                            }}
+                            onClick={() =>
+                              updateQuantity(item.id, item.quantity - 1)
+                            }
                             className="h-6 w-6 p-0"
+                            disabled={item.quantity <= 1}
                           >
                             -
                           </Button>
@@ -375,14 +415,19 @@ export default function CheckoutPage() {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => {
-                              /* TODO: increase quantity */
-                            }}
+                            onClick={() =>
+                              updateQuantity(item.id, item.quantity + 1)
+                            }
                             className="h-6 w-6 p-0"
                           >
                             +
                           </Button>
-                          <Button size="sm" variant="outline" className="ml-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="ml-2"
+                            onClick={() => removeItem(item.id)}
+                          >
                             REMOVE
                           </Button>
                         </div>
@@ -573,6 +618,50 @@ export default function CheckoutPage() {
                 <Button onClick={submitAddress}>
                   {editing ? "Update" : "Save"}
                 </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Empty Cart Modal */}
+      {showEmptyCartModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white w-full max-w-md rounded-lg shadow-lg p-6">
+            <div className="text-center">
+              <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-gray-100 mb-4">
+                <svg
+                  className="h-8 w-8 text-gray-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6-5v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6m8 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4.01"
+                  />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Your checkout has no items
+              </h3>
+              <p className="text-sm text-gray-600 mb-6">
+                Add some items to your cart to continue with checkout
+              </p>
+              <div className="flex gap-3 justify-center">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowEmptyCartModal(false)}
+                >
+                  Stay Here
+                </Button>
+                <Link href="/cart">
+                  <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                    GO TO CART
+                  </Button>
+                </Link>
               </div>
             </div>
           </div>
