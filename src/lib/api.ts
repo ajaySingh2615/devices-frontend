@@ -1152,6 +1152,35 @@ export interface CouponApplicationResult {
   finalAmount: number;
 }
 
+// Address types
+export type AddressDto = {
+  id: string;
+  name: string;
+  phone?: string;
+  line1: string;
+  line2?: string;
+  city: string;
+  state: string;
+  country: string;
+  pincode: string;
+  isDefault: boolean;
+  createdAt: string;
+};
+
+export type CreateAddressRequest = {
+  name: string;
+  phone?: string;
+  line1: string;
+  line2?: string;
+  city: string;
+  state: string;
+  country: string;
+  pincode: string;
+  isDefault?: boolean;
+};
+
+export type UpdateAddressRequest = CreateAddressRequest;
+
 // Coupon API
 export const couponApi = {
   getActiveCoupons: async (): Promise<Coupon[]> => {
@@ -1270,6 +1299,61 @@ export const cartApiWithCoupons = {
       params: couponCode ? { couponCode } : {},
     });
     return response.data;
+  },
+};
+
+// Checkout types
+export type CheckoutSummaryRequest = {
+  addressId: string;
+  couponCode?: string;
+  paymentMethod: string; // e.g., "RAZORPAY"
+};
+
+export type CheckoutSummaryResponse = {
+  items: CartItem[];
+  subtotal: number;
+  shipping: number;
+  tax: number;
+  appliedCoupon?: Coupon;
+  discount: number;
+  grandTotal: number;
+};
+
+// Checkout API
+export const checkoutApi = {
+  summarize: async (
+    body: CheckoutSummaryRequest,
+    sessionId?: string
+  ): Promise<CheckoutSummaryResponse> => {
+    const params = sessionId ? { sessionId } : {};
+    const res = await api.post("/api/v1/checkout/summary", body, { params });
+    return res.data;
+  },
+};
+
+// Address API
+export const addressApi = {
+  list: async (): Promise<AddressDto[]> => {
+    const res = await api.get("/api/v1/addresses");
+    return res.data;
+  },
+  create: async (payload: CreateAddressRequest): Promise<AddressDto> => {
+    const res = await api.post("/api/v1/addresses", payload);
+    return res.data;
+  },
+  update: async (
+    id: string,
+    payload: UpdateAddressRequest
+  ): Promise<AddressDto> => {
+    const res = await api.patch(`/api/v1/addresses/${id}`, payload);
+    return res.data;
+  },
+  remove: async (id: string): Promise<void> => {
+    await api.delete(`/api/v1/addresses/${id}`);
+  },
+  makeDefault: async (id: string): Promise<AddressDto> => {
+    const res = await api.post(`/api/v1/addresses/${id}/default`);
+    return res.data;
   },
 };
 
