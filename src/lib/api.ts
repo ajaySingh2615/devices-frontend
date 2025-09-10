@@ -1319,6 +1319,40 @@ export type CheckoutSummaryResponse = {
   grandTotal: number;
 };
 
+// Payment Types
+export type CreateRazorpayOrderRequest = {
+  amount: number;
+  currency: string;
+  receipt?: string;
+  notes?: string;
+};
+
+export type CreateRazorpayOrderResponse = {
+  id: string;
+  entity: string;
+  amount: number;
+  amountPaid: string;
+  amountDue: string;
+  currency: string;
+  receipt: string;
+  status: string;
+  attempts: number;
+  notes: string;
+  createdAt: number;
+};
+
+export type VerifyPaymentRequest = {
+  razorpayPaymentId: string;
+  razorpayOrderId: string;
+  razorpaySignature: string;
+};
+
+export type VerifyPaymentResponse = {
+  verified: boolean;
+  message: string;
+  orderId: string;
+};
+
 // Checkout API
 export const checkoutApi = {
   summarize: async (
@@ -1327,6 +1361,22 @@ export const checkoutApi = {
   ): Promise<CheckoutSummaryResponse> => {
     const params = sessionId ? { sessionId } : {};
     const res = await api.post("/api/v1/checkout/summary", body, { params });
+    return res.data;
+  },
+};
+
+// Payment API
+export const paymentApi = {
+  createRazorpayOrder: async (
+    body: CreateRazorpayOrderRequest
+  ): Promise<CreateRazorpayOrderResponse> => {
+    const res = await api.post("/api/v1/payments/razorpay/order", body);
+    return res.data;
+  },
+  verifyPayment: async (
+    body: VerifyPaymentRequest
+  ): Promise<VerifyPaymentResponse> => {
+    const res = await api.post("/api/v1/payments/razorpay/verify", body);
     return res.data;
   },
 };

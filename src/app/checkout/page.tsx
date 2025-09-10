@@ -10,6 +10,9 @@ import {
   CheckoutSummaryResponse,
   CreateAddressRequest,
   UpdateAddressRequest,
+  paymentApi,
+  CreateRazorpayOrderRequest,
+  VerifyPaymentRequest,
 } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -29,6 +32,7 @@ export default function CheckoutPage() {
   const [editing, setEditing] = useState<AddressDto | null>(null);
   const [showOrderSummary, setShowOrderSummary] = useState<boolean>(false);
   const [showEmptyCartModal, setShowEmptyCartModal] = useState<boolean>(false);
+  const [processingPayment, setProcessingPayment] = useState<boolean>(false);
   const [form, setForm] = useState<CreateAddressRequest>({
     name: "",
     phone: "",
@@ -125,6 +129,99 @@ export default function CheckoutPage() {
       currency: "INR",
       maximumFractionDigits: 0,
     }).format(n);
+
+  const handlePayment = async () => {
+    if (!summary) {
+      toast.error("Please complete checkout summary first");
+      return;
+    }
+
+    setProcessingPayment(true);
+    try {
+      // Create Razorpay order
+      const orderRequest: CreateRazorpayOrderRequest = {
+        amount: summary.grandTotal,
+        currency: "INR",
+        receipt: `receipt_${Date.now()}`,
+        notes: JSON.stringify({
+          addressId: selectedAddressId,
+          couponCode: couponCode || undefined,
+        }),
+      };
+
+      const orderResponse = await paymentApi.createRazorpayOrder(orderRequest);
+
+      // Load Razorpay script dynamically
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.async = true;
+      document.body.appendChild(script);
+
+      script.onload = () => {
+        const options = {
+          key:
+            process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ||
+            "rzp_test_RFthbdvKoFjd2D",
+          amount: orderResponse.amount,
+          currency: orderResponse.currency,
+          name: "DeviceStore",
+          description: "Order Payment",
+          order_id: orderResponse.id,
+          handler: async function (response: any) {
+            try {
+              // Verify payment
+              const verifyRequest: VerifyPaymentRequest = {
+                razorpayPaymentId: response.razorpay_payment_id,
+                razorpayOrderId: response.razorpay_order_id,
+                razorpaySignature: response.razorpay_signature,
+              };
+
+              const verifyResponse = await paymentApi.verifyPayment(
+                verifyRequest
+              );
+
+              if (verifyResponse.verified) {
+                toast.success("Payment successful!");
+                // TODO: Create order and redirect to success page
+                window.location.href = `/order/success?orderId=${verifyResponse.orderId}`;
+              } else {
+                toast.error("Payment verification failed");
+              }
+            } catch (error: any) {
+              console.error("Payment verification error:", error);
+              toast.error("Payment verification failed");
+            }
+          },
+          prefill: {
+            name: addresses.find((a) => a.id === selectedAddressId)?.name || "",
+            email: "customer@example.com", // TODO: Get from user profile
+            contact:
+              addresses.find((a) => a.id === selectedAddressId)?.phone || "",
+          },
+          theme: {
+            color: "#2563eb",
+          },
+          modal: {
+            ondismiss: function () {
+              setProcessingPayment(false);
+            },
+          },
+        };
+
+        const razorpay = new (window as any).Razorpay(options);
+        razorpay.open();
+      };
+
+      script.onerror = () => {
+        toast.error("Failed to load payment gateway");
+        setProcessingPayment(false);
+      };
+    } catch (error: any) {
+      console.error("Payment error:", error);
+      toast.error(error?.message || "Payment failed");
+      setProcessingPayment(false);
+    }
+  };
 
   const resetForm = () => {
     setEditing(null);
@@ -447,8 +544,12 @@ export default function CheckoutPage() {
                   </div>
 
                   {/* Continue Button */}
-                  <Button className="w-full bg-orange-500 hover:bg-orange-600 text-white">
-                    CONTINUE
+                  <Button
+                    className="w-full bg-orange-500 hover:bg-orange-600 text-white"
+                    onClick={handlePayment}
+                    disabled={processingPayment}
+                  >
+                    {processingPayment ? "Processing..." : "CONTINUE"}
                   </Button>
                 </div>
               </CardContent>
