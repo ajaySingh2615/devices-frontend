@@ -50,6 +50,8 @@ export default function CartPage() {
         quantity: newQuantity,
       });
       setCart(updatedCart);
+      // Dispatch cart updated event for navbar badge
+      window.dispatchEvent(new CustomEvent("cartUpdated"));
       toast.success("Cart updated");
     } catch (error: any) {
       console.error("Failed to update cart item:", error);
@@ -64,6 +66,8 @@ export default function CartPage() {
       setUpdating(itemId);
       const updatedCart = await cartApiWithCoupons.removeFromCart(itemId);
       setCart(updatedCart);
+      // Dispatch cart updated event for navbar badge
+      window.dispatchEvent(new CustomEvent("cartUpdated"));
       toast.success("Item removed from cart");
     } catch (error: any) {
       console.error("Failed to remove item:", error);
@@ -79,6 +83,8 @@ export default function CartPage() {
     try {
       const updatedCart = await cartApiWithCoupons.clearCart();
       setCart(updatedCart);
+      // Dispatch cart updated event for navbar badge
+      window.dispatchEvent(new CustomEvent("cartUpdated"));
       toast.success("Cart cleared");
     } catch (error: any) {
       console.error("Failed to clear cart:", error);

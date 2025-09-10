@@ -84,6 +84,8 @@ export default function CheckoutPage() {
       await cartApi.updateCartItem(itemId, { quantity: newQuantity });
       // Refresh the summary after quantity update
       await fetchSummary();
+      // Dispatch cart updated event for navbar badge
+      window.dispatchEvent(new CustomEvent("cartUpdated"));
       toast.success("Quantity updated");
     } catch (e: any) {
       toast.error(e?.message || "Failed to update quantity");
@@ -101,6 +103,9 @@ export default function CheckoutPage() {
       };
       const res = await checkoutApi.summarize(body);
       setSummary(res);
+
+      // Dispatch cart updated event for navbar badge
+      window.dispatchEvent(new CustomEvent("cartUpdated"));
 
       // Check if cart is now empty
       if (res.items.length === 0) {
