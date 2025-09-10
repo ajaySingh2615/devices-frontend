@@ -867,6 +867,12 @@ export interface Cart {
   subtotal: number;
   taxTotal: number;
   grandTotal: number;
+
+  // Coupon information
+  appliedCoupon?: Coupon;
+  couponDiscount?: number;
+  finalTotal?: number;
+
   createdAt: string;
   updatedAt: string;
 }
@@ -1111,6 +1117,88 @@ export const adminReviewApi = {
       `/api/v1/reviews/admin/${reviewId}/moderate`,
       request
     );
+    return response.data;
+  },
+};
+
+// Coupon Types
+export interface Coupon {
+  id: string;
+  code: string;
+  name: string;
+  description?: string;
+  type: "PERCENTAGE" | "FIXED";
+  value: number;
+  minOrderAmount?: number;
+  maxDiscountAmount?: number;
+  startAt: string;
+  endAt: string;
+  usageLimit: number;
+  perUserLimit: number;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface ApplyCouponRequest {
+  code: string;
+}
+
+export interface CouponApplicationResult {
+  success: boolean;
+  message: string;
+  coupon?: Coupon;
+  discountAmount: number;
+  originalAmount: number;
+  finalAmount: number;
+}
+
+// Coupon API
+export const couponApi = {
+  getActiveCoupons: async (): Promise<Coupon[]> => {
+    const response = await api.get("/api/v1/coupons");
+    return response.data;
+  },
+
+  getCouponByCode: async (code: string): Promise<Coupon> => {
+    const response = await api.get(`/api/v1/coupons/${code}`);
+    return response.data;
+  },
+
+  validateCoupon: async (
+    request: ApplyCouponRequest,
+    orderAmount: number
+  ): Promise<CouponApplicationResult> => {
+    const response = await api.post("/api/v1/coupons/validate", request, {
+      params: { orderAmount },
+    });
+    return response.data;
+  },
+};
+
+// Enhanced Cart API with Coupon Support
+export const cartApiWithCoupons = {
+  ...cartApi,
+
+  applyCoupon: async (
+    request: ApplyCouponRequest
+  ): Promise<CouponApplicationResult> => {
+    console.log(
+      "API: Sending coupon request to /api/v1/cart/apply-coupon",
+      request
+    );
+    const response = await api.post("/api/v1/cart/apply-coupon", request);
+    console.log("API: Coupon response received", response.data);
+    return response.data;
+  },
+
+  removeCoupon: async (): Promise<void> => {
+    await api.delete("/api/v1/cart/apply-coupon");
+  },
+
+  getCartWithCoupon: async (couponCode?: string): Promise<Cart> => {
+    const response = await api.get("/api/v1/cart/with-coupon", {
+      params: couponCode ? { couponCode } : {},
+    });
     return response.data;
   },
 };

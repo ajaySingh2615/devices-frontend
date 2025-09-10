@@ -3,13 +3,20 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "react-hot-toast";
-import { cartApi, Cart, CartItem } from "@/lib/api";
+import {
+  cartApiWithCoupons,
+  Cart,
+  CartItem,
+  CouponApplicationResult,
+} from "@/lib/api";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Trash2, Plus, Minus, ShoppingBag, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import CouponInput from "@/components/cart/CouponInput";
+import CartSummary from "@/components/cart/CartSummary";
 
 export default function CartPage() {
   const router = useRouter();
@@ -24,7 +31,7 @@ export default function CartPage() {
   const loadCart = async () => {
     try {
       setLoading(true);
-      const cartData = await cartApi.getCart();
+      const cartData = await cartApiWithCoupons.getCart();
       setCart(cartData);
     } catch (error: any) {
       console.error("Failed to load cart:", error);
@@ -39,7 +46,7 @@ export default function CartPage() {
 
     try {
       setUpdating(itemId);
-      const updatedCart = await cartApi.updateCartItem(itemId, {
+      const updatedCart = await cartApiWithCoupons.updateCartItem(itemId, {
         quantity: newQuantity,
       });
       setCart(updatedCart);
@@ -55,7 +62,7 @@ export default function CartPage() {
   const removeItem = async (itemId: string) => {
     try {
       setUpdating(itemId);
-      const updatedCart = await cartApi.removeFromCart(itemId);
+      const updatedCart = await cartApiWithCoupons.removeFromCart(itemId);
       setCart(updatedCart);
       toast.success("Item removed from cart");
     } catch (error: any) {
@@ -70,13 +77,49 @@ export default function CartPage() {
     if (!confirm("Are you sure you want to clear your cart?")) return;
 
     try {
-      const updatedCart = await cartApi.clearCart();
+      const updatedCart = await cartApiWithCoupons.clearCart();
       setCart(updatedCart);
       toast.success("Cart cleared");
     } catch (error: any) {
       console.error("Failed to clear cart:", error);
       toast.error("Failed to clear cart");
     }
+  };
+
+  const handleCouponApplied = (result: CouponApplicationResult) => {
+    if (result.success && result.coupon && cart) {
+      // Update cart state locally instead of reloading
+      setCart((prevCart) => ({
+        ...prevCart!,
+        appliedCoupon: result.coupon,
+        couponDiscount: result.discountAmount,
+        finalTotal: result.finalAmount,
+      }));
+    }
+  };
+
+  const handleCouponRemoved = async () => {
+    try {
+      // Call backend to remove coupon from database
+      await cartApiWithCoupons.removeCoupon();
+
+      // Update cart state locally
+      if (cart) {
+        setCart((prevCart) => ({
+          ...prevCart!,
+          appliedCoupon: undefined,
+          couponDiscount: undefined,
+          finalTotal: undefined,
+        }));
+      }
+    } catch (error: any) {
+      console.error("Failed to remove coupon:", error);
+      toast.error("Failed to remove coupon");
+    }
+  };
+
+  const handleProceedToCheckout = () => {
+    router.push("/checkout");
   };
 
   if (loading) {
@@ -179,69 +222,21 @@ export default function CartPage() {
             </div>
           </div>
 
-          {/* Order Summary */}
-          <div className="lg:col-span-1">
-            <div className="bg-surface rounded-lg border border-border p-4 sticky top-4">
-              <h3 className="text-lg font-semibold text-foreground mb-4">
-                Order Summary
-              </h3>
+          {/* Order Summary & Coupon */}
+          <div className="lg:col-span-1 space-y-4">
+            {/* Coupon Input */}
+            <CouponInput
+              onCouponApplied={handleCouponApplied}
+              onCouponRemoved={handleCouponRemoved}
+              appliedCoupon={cart.appliedCoupon}
+              cartTotal={cart.grandTotal}
+            />
 
-              <div className="space-y-3 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-foreground-secondary">
-                    Subtotal ({cart.totalItems} items)
-                  </span>
-                  <span className="text-foreground">
-                    ₹{cart.subtotal.toLocaleString()}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-foreground-secondary">
-                    Delivery Charges
-                  </span>
-                  <span className="text-success">FREE</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-foreground-secondary">Tax</span>
-                  <span className="text-foreground">
-                    ₹{cart.taxTotal.toLocaleString()}
-                  </span>
-                </div>
-                <div className="border-t border-border pt-3">
-                  <div className="flex justify-between text-base font-semibold">
-                    <span className="text-foreground">Total Amount</span>
-                    <span className="text-foreground">
-                      ₹{cart.grandTotal.toLocaleString()}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-6 space-y-3">
-                <Button
-                  className="w-full bg-primary hover:bg-primary-dark text-white"
-                  size="lg"
-                  onClick={() => router.push("/checkout")}
-                >
-                  Proceed to Checkout
-                </Button>
-                <Link href="/products">
-                  <Button variant="outline" className="w-full">
-                    Continue Shopping
-                  </Button>
-                </Link>
-              </div>
-
-              {/* Security Badge */}
-              <div className="mt-4 pt-4 border-t border-border">
-                <div className="flex items-center gap-2 text-xs text-foreground-muted">
-                  <div className="w-4 h-4 bg-success rounded-full flex items-center justify-center">
-                    <span className="text-white text-xs">✓</span>
-                  </div>
-                  <span>Secure checkout with SSL encryption</span>
-                </div>
-              </div>
-            </div>
+            {/* Enhanced Cart Summary */}
+            <CartSummary
+              cart={cart}
+              onProceedToCheckout={handleProceedToCheckout}
+            />
           </div>
         </div>
       </div>
