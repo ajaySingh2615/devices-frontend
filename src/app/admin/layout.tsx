@@ -16,6 +16,7 @@ import {
   HiX,
   HiLogout,
   HiChatAlt2,
+  HiGift,
 } from "react-icons/hi";
 
 import { Button } from "@/components/ui/Button";
@@ -27,6 +28,7 @@ const adminNavItems = [
   { href: "/admin/products", icon: HiViewGrid, label: "Products" },
   { href: "/admin/categories", icon: HiCollection, label: "Categories" },
   { href: "/admin/brands", icon: HiTag, label: "Brands" },
+  { href: "/admin/coupons", icon: HiGift, label: "Coupons" },
   { href: "/admin/media", icon: HiPhotograph, label: "Media" },
   { href: "/admin/users", icon: HiUsers, label: "Users" },
   { href: "/admin/reviews", icon: HiChatAlt2, label: "Reviews" },

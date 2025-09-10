@@ -1175,6 +1175,76 @@ export const couponApi = {
   },
 };
 
+// Admin Coupon Types
+export interface CreateCouponRequest {
+  code: string;
+  name: string;
+  description?: string;
+  type: "PERCENTAGE" | "FIXED";
+  value: number;
+  minOrderAmount?: number;
+  maxDiscountAmount?: number;
+  startAt: string;
+  endAt: string;
+  usageLimit: number;
+  perUserLimit: number;
+  isActive: boolean;
+}
+
+export interface UpdateCouponRequest extends CreateCouponRequest {
+  id: string;
+}
+
+// Admin Coupon API
+export const adminCouponApi = {
+  getAllCoupons: async (): Promise<Coupon[]> => {
+    const response = await api.get("/api/v1/admin/coupons");
+    return response.data;
+  },
+
+  getCouponById: async (id: string): Promise<Coupon> => {
+    const response = await api.get(`/api/v1/admin/coupons/${id}`);
+    return response.data;
+  },
+
+  createCoupon: async (request: CreateCouponRequest): Promise<Coupon> => {
+    const response = await api.post("/api/v1/admin/coupons", request);
+    return response.data;
+  },
+
+  updateCoupon: async (
+    id: string,
+    request: UpdateCouponRequest
+  ): Promise<Coupon> => {
+    const response = await api.put(`/api/v1/admin/coupons/${id}`, request);
+    return response.data;
+  },
+
+  deleteCoupon: async (id: string): Promise<void> => {
+    await api.delete(`/api/v1/admin/coupons/${id}`);
+  },
+
+  toggleCouponStatus: async (
+    id: string,
+    isActive: boolean
+  ): Promise<Coupon> => {
+    const requestBody = { isActive };
+    console.log("API: Sending toggle request:", { id, requestBody });
+    console.log("API: Request body details:", JSON.stringify(requestBody));
+    const response = await api.patch(
+      `/api/v1/admin/coupons/${id}/status`,
+      requestBody
+    );
+    console.log("API: Toggle response:", response.data);
+    return response.data;
+  },
+
+  getCouponUsageStats: async (id: string): Promise<any> => {
+    const response = await api.get(`/api/v1/admin/coupons/${id}/usage`);
+    return response.data;
+  },
+};
+
 // Enhanced Cart API with Coupon Support
 export const cartApiWithCoupons = {
   ...cartApi,
