@@ -174,11 +174,6 @@ export default function CheckoutPage() {
                   )}
                 </div>
                 <div className="flex gap-2">
-                  {selectedAddressId && showOrderSummary && (
-                    <Button variant="outline" size="sm">
-                      CHANGE
-                    </Button>
-                  )}
                   {!showOrderSummary && (
                     <>
                       <Button variant="outline" onClick={openAddAddress}>
@@ -301,7 +296,11 @@ export default function CheckoutPage() {
                       }
                     </div>
                   </div>
-                  <Button variant="outline" size="sm">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowOrderSummary(false)}
+                  >
                     CHANGE
                   </Button>
                 </div>
@@ -325,15 +324,23 @@ export default function CheckoutPage() {
                   {/* Product Items */}
                   {summary.items.map((item) => (
                     <div key={item.id} className="flex gap-4 border-b pb-4">
-                      <div className="w-20 h-20 bg-gray-100 rounded-md flex items-center justify-center">
-                        <span className="text-xs text-gray-500">Image</span>
+                      <div className="w-20 h-20 bg-gray-100 rounded-md flex items-center justify-center overflow-hidden">
+                        {item.product?.images &&
+                        item.product.images.length > 0 ? (
+                          <img
+                            src={item.product.images[0].url}
+                            alt={item.product.title}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-xs text-gray-500">
+                            No Image
+                          </span>
+                        )}
                       </div>
                       <div className="flex-1">
                         <div className="font-medium text-sm">
                           {item.product?.title || "Product"}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          Seller: DeviceStore
                         </div>
                         <div className="text-xs text-muted-foreground">
                           Delivery by{" "}
