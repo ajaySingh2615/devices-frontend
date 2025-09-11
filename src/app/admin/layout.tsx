@@ -54,7 +54,7 @@ export default function AdminLayout({
 
   return (
     <AdminProtection>
-      <div className="min-h-screen bg-background-secondary flex">
+      <div className="min-h-screen bg-background-secondary flex overflow-x-hidden">
         {/* Mobile sidebar backdrop */}
         {sidebarOpen && (
           <div
@@ -132,7 +132,7 @@ export default function AdminLayout({
         </div>
 
         {/* Main content */}
-        <div className="flex-1 flex flex-col lg:ml-0">
+        <div className="flex-1 min-w-0 flex flex-col lg:ml-0 overflow-x-hidden">
           {/* Top bar */}
           <header className="bg-surface border-b border-border px-6 py-4 flex-shrink-0">
             <div className="flex items-center justify-between">
@@ -154,7 +154,7 @@ export default function AdminLayout({
           </header>
 
           {/* Page content */}
-          <main className="flex-1 p-6">{children}</main>
+          <main className="flex-1 p-6 min-w-0">{children}</main>
         </div>
       </div>
     </AdminProtection>
