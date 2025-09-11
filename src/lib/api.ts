@@ -1490,6 +1490,15 @@ export const orderApi = {
     const response = await api.get("/api/v1/orders");
     return response.data;
   },
+  getUserOrdersPaginated: async (
+    page: number = 0,
+    size: number = 10
+  ): Promise<PageResponse<OrderDto>> => {
+    const response = await api.get("/api/v1/orders/paginated", {
+      params: { page, size },
+    });
+    return response.data;
+  },
   getOrderById: async (orderId: string): Promise<OrderDto> => {
     const response = await api.get(`/api/v1/orders/${orderId}`);
     return response.data;
