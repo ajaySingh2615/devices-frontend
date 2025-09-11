@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   addressApi,
   AddressDto,
@@ -26,6 +27,7 @@ import { toast } from "react-hot-toast";
 import Link from "next/link";
 
 export default function CheckoutPage() {
+  const router = useRouter();
   const [addresses, setAddresses] = useState<AddressDto[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string>("");
   const [couponCode, setCouponCode] = useState<string>("");
@@ -209,7 +211,9 @@ export default function CheckoutPage() {
                       window.dispatchEvent(new CustomEvent("cartUpdated"));
                     } catch {}
                     toast.success("Order placed successfully!");
-                    window.location.href = `/order/success?orderId=${orderResponse.orderId}`;
+                    router.push(
+                      `/order/success?orderId=${orderResponse.orderId}`
+                    );
                   } else {
                     toast.error("Failed to place order");
                   }
