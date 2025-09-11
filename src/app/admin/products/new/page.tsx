@@ -1,14 +1,21 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "react-hot-toast";
-import { HiArrowLeft, HiPlus, HiTrash } from "react-icons/hi";
+import {
+  HiArrowLeft,
+  HiPlus,
+  HiTrash,
+  HiDuplicate,
+  HiExternalLink,
+} from "react-icons/hi";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
 import {
   adminApi,
   catalogApi,
@@ -16,6 +23,8 @@ import {
   Brand,
   ConditionGrade,
 } from "@/lib/api";
+
+/* ---------- constants ---------- */
 
 const conditionGrades: {
   value: ConditionGrade;
@@ -55,6 +64,24 @@ interface VariantFormData {
   safetyStock: number;
 }
 
+/* ---------- helpers ---------- */
+
+const slugify = (s: string) =>
+  s
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+
+const pct = (num: number) => `${Math.round(num)}%`;
+
+function discountPercent(mrp: number, sale: number) {
+  if (!mrp || !sale || mrp <= 0 || sale <= 0) return 0;
+  return Math.max(0, ((mrp - sale) / mrp) * 100);
+}
+
+/* ---------- page ---------- */
+
 export default function NewProductPage() {
   const router = useRouter();
   const [categories, setCategories] = useState<Category[]>([]);
@@ -72,6 +99,9 @@ export default function NewProductPage() {
     warrantyMonths: 6,
   });
 
+  // If user edits the slug field manually, don’t overwrite from title
+  const [slugEdited, setSlugEdited] = useState(false);
+
   const [variants, setVariants] = useState<VariantFormData[]>([
     {
       sku: "",
@@ -88,41 +118,49 @@ export default function NewProductPage() {
     },
   ]);
 
+  /* ---------- effects ---------- */
+
   useEffect(() => {
-    loadData();
+    (async () => {
+      try {
+        const [categoriesData, brandsData] = await Promise.all([
+          catalogApi.getCategories(), // public, active only
+          catalogApi.getBrands(),
+        ]);
+        setCategories(categoriesData);
+        setBrands(brandsData);
+      } catch (err) {
+        console.error(err);
+        toast.error("Failed to load categories/brands");
+      } finally {
+        setLoadingData(false);
+      }
+    })();
   }, []);
 
+  // Auto-generate slug from title unless user edited slug manually
   useEffect(() => {
-    // Auto-generate slug from title
-    if (productData.title && !productData.slug.includes(" ")) {
-      const slug = productData.title
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/(^-|-$)/g, "");
-      setProductData((prev) => ({ ...prev, slug }));
+    if (!slugEdited) {
+      setProductData((prev) => ({ ...prev, slug: slugify(prev.title) }));
     }
-  }, [productData.title]);
+  }, [productData.title, slugEdited]);
 
-  const loadData = async () => {
-    try {
-      const [categoriesData, brandsData] = await Promise.all([
-        catalogApi.getCategories(), // Use public API to get only active categories
-        catalogApi.getBrands(), // Use public API to get only active brands
-      ]);
+  /* ---------- derived ---------- */
 
-      setCategories(categoriesData);
-      setBrands(brandsData);
-    } catch (error) {
-      console.error("Failed to load data:", error);
-      toast.error("Failed to load categories and brands");
-    } finally {
-      setLoadingData(false);
-    }
-  };
+  const brandName = useMemo(
+    () => brands.find((b) => b.id === productData.brandId)?.name || "",
+    [brands, productData.brandId]
+  );
+  const categoryName = useMemo(
+    () => categories.find((c) => c.id === productData.categoryId)?.name || "",
+    [categories, productData.categoryId]
+  );
+
+  /* ---------- variant operations ---------- */
 
   const addVariant = () => {
-    setVariants([
-      ...variants,
+    setVariants((prev) => [
+      ...prev,
       {
         sku: "",
         mpn: "",
@@ -139,10 +177,17 @@ export default function NewProductPage() {
     ]);
   };
 
+  const duplicateVariant = (index: number) => {
+    setVariants((prev) => {
+      const v = prev[index];
+      return [...prev, { ...v, sku: "" }]; // clear SKU to avoid duplicates
+    });
+  };
+
   const removeVariant = (index: number) => {
-    if (variants.length > 1) {
-      setVariants(variants.filter((_, i) => i !== index));
-    }
+    setVariants((prev) =>
+      prev.length > 1 ? prev.filter((_, i) => i !== index) : prev
+    );
   };
 
   const updateVariant = (
@@ -151,49 +196,81 @@ export default function NewProductPage() {
     value: any
   ) => {
     setVariants((prev) =>
-      prev.map((variant, i) =>
-        i === index ? { ...variant, [field]: value } : variant
-      )
+      prev.map((v, i) => (i === index ? { ...v, [field]: value } : v))
     );
   };
 
+  /* ---------- validation ---------- */
+
+  const validate = () => {
+    if (!productData.categoryId || !productData.brandId || !productData.title) {
+      toast.error("Please fill all required product fields.");
+      return false;
+    }
+    if (!productData.slug || !/^[a-z0-9-]+$/.test(productData.slug)) {
+      toast.error(
+        "Slug must contain only lowercase letters, numbers and hyphens."
+      );
+      return false;
+    }
+    // unique SKUs + sensible prices + tax range
+    const skus = new Set<string>();
+    for (let i = 0; i < variants.length; i++) {
+      const v = variants[i];
+      if (!v.sku)
+        return toast.error(`Variant ${i + 1}: SKU is required.`), false;
+      if (skus.has(v.sku))
+        return toast.error(`Duplicate SKU in Variant ${i + 1}.`), false;
+      skus.add(v.sku);
+      if (v.priceMrp <= 0 || v.priceSale <= 0)
+        return (
+          toast.error(`Variant ${i + 1}: Enter valid MRP & Sale Price.`), false
+        );
+      if (v.priceSale > v.priceMrp)
+        return (
+          toast.error(`Variant ${i + 1}: Sale Price must be ≤ MRP.`), false
+        );
+      if (v.taxRate < 0 || v.taxRate > 100)
+        return (
+          toast.error(`Variant ${i + 1}: Tax Rate must be between 0 and 100.`),
+          false
+        );
+      if (v.quantity < 0 || v.safetyStock < 0)
+        return (
+          toast.error(`Variant ${i + 1}: Stock values cannot be negative.`),
+          false
+        );
+    }
+    return true;
+  };
+
+  /* ---------- submit ---------- */
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!productData.categoryId || !productData.brandId || !productData.title) {
-      toast.error("Please fill in all required fields");
-      return;
-    }
-
-    if (variants.some((v) => !v.sku || v.priceMrp <= 0 || v.priceSale <= 0)) {
-      toast.error("Please fill in all variant details");
-      return;
-    }
+    if (!validate()) return;
 
     setLoading(true);
-
     try {
       // Create product
       const product = await adminApi.createProduct(productData);
 
-      // Create variants
-      for (const variantData of variants) {
+      // Create variants + inventory
+      for (const v of variants) {
         const variant = await adminApi.addVariant(product.id, {
-          sku: variantData.sku,
-          mpn: variantData.mpn,
-          color: variantData.color,
-          storageGb: variantData.storageGb || undefined,
-          ramGb: variantData.ramGb || undefined,
-          priceMrp: variantData.priceMrp,
-          priceSale: variantData.priceSale,
-          taxRate: variantData.taxRate,
-          weightGrams: variantData.weightGrams || undefined,
+          sku: v.sku,
+          mpn: v.mpn,
+          color: v.color,
+          storageGb: v.storageGb || undefined,
+          ramGb: v.ramGb || undefined,
+          priceMrp: v.priceMrp,
+          priceSale: v.priceSale,
+          taxRate: v.taxRate,
+          weightGrams: v.weightGrams || undefined,
         });
-
-        // Update inventory
         await adminApi.updateInventory(variant.id, {
-          quantity: variantData.quantity,
-          safetyStock: variantData.safetyStock,
+          quantity: v.quantity,
+          safetyStock: v.safetyStock,
           reserved: 0,
         });
       }
@@ -217,33 +294,34 @@ export default function NewProductPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="w-full px-4 sm:px-6 lg:px-8 py-5 space-y-5 min-w-0">
       {/* Header */}
-      <div className="flex items-center space-x-4">
+      <div className="flex items-start sm:items-center gap-4 flex-wrap">
         <Link href="/admin/products">
-          <Button variant="ghost" size="sm">
+          <Button variant="outline" size="sm">
             <HiArrowLeft className="w-5 h-5 mr-2" />
             Back to Products
           </Button>
         </Link>
         <div>
-          <h1 className="text-3xl font-bold font-display text-foreground">
+          <h1 className="text-2xl font-bold font-display text-foreground">
             Create Product
           </h1>
-          <p className="text-foreground-secondary">
+          <p className="text-sm text-foreground-muted">
             Add a new product to your catalog
           </p>
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Product Details */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Product Information</CardTitle>
+        {/* Product Info */}
+        <Card className="shadow-sm">
+          <CardHeader className="border-b border-border p-4 sm:p-5">
+            <CardTitle className="text-lg">Product Information</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="p-4 sm:p-5 space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Category */}
               <div>
                 <label className="block text-sm font-medium mb-2">
                   Category *
@@ -256,18 +334,19 @@ export default function NewProductPage() {
                       categoryId: e.target.value,
                     })
                   }
-                  className="w-full p-3 border border-border rounded-lg focus:ring-2 focus:ring-primary bg-surface"
+                  className="w-full px-3 py-2 rounded-md border border-border bg-background"
                   required
                 >
                   <option value="">Select Category</option>
-                  {categories.map((category) => (
-                    <option key={category.id} value={category.id}>
-                      {category.name}
+                  {categories.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
                     </option>
                   ))}
                 </select>
               </div>
 
+              {/* Brand */}
               <div>
                 <label className="block text-sm font-medium mb-2">
                   Brand *
@@ -277,19 +356,20 @@ export default function NewProductPage() {
                   onChange={(e) =>
                     setProductData({ ...productData, brandId: e.target.value })
                   }
-                  className="w-full p-3 border border-border rounded-lg focus:ring-2 focus:ring-primary bg-surface"
+                  className="w-full px-3 py-2 rounded-md border border-border bg-background"
                   required
                 >
                   <option value="">Select Brand</option>
-                  {brands.map((brand) => (
-                    <option key={brand.id} value={brand.id}>
-                      {brand.name}
+                  {brands.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.name}
                     </option>
                   ))}
                 </select>
               </div>
             </div>
 
+            {/* Title */}
             <div>
               <label className="block text-sm font-medium mb-2">
                 Product Title *
@@ -303,8 +383,13 @@ export default function NewProductPage() {
                 placeholder="Enter product title"
                 required
               />
+              <p className="text-[12px] text-foreground-light mt-1">
+                Tip: add key specs (e.g., “HP Pavilion 14, i5 11th Gen, 8GB,
+                512GB SSD”)
+              </p>
             </div>
 
+            {/* Slug */}
             <div>
               <label className="block text-sm font-medium mb-2">
                 URL Slug *
@@ -312,17 +397,28 @@ export default function NewProductPage() {
               <Input
                 type="text"
                 value={productData.slug}
-                onChange={(e) =>
-                  setProductData({ ...productData, slug: e.target.value })
-                }
+                onChange={(e) => {
+                  setSlugEdited(true);
+                  setProductData({
+                    ...productData,
+                    slug: slugify(e.target.value),
+                  });
+                }}
                 placeholder="product-url-slug"
                 required
+                pattern="^[a-z0-9-]+$"
+                title="Only lowercase letters, numbers and hyphens"
               />
-              <p className="text-sm text-foreground-secondary mt-1">
-                This will be used in the product URL
-              </p>
+              <div className="flex items-center gap-2 text-[12px] text-foreground-light mt-1">
+                <HiExternalLink className="w-4 h-4" />
+                <span>Preview:</span>
+                <span className="font-mono text-foreground">
+                  /products/{productData.slug || "your-slug"}
+                </span>
+              </div>
             </div>
 
+            {/* Description */}
             <div>
               <label className="block text-sm font-medium mb-2">
                 Description
@@ -336,11 +432,12 @@ export default function NewProductPage() {
                   })
                 }
                 rows={4}
-                className="w-full p-3 border border-border rounded-lg focus:ring-2 focus:ring-primary bg-surface resize-none"
-                placeholder="Product description..."
+                className="w-full px-3 py-2 rounded-md border border-border bg-background resize-none"
+                placeholder="Key features, specs, warranty, box contents, condition notes…"
               />
             </div>
 
+            {/* Grade + Warranty */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-2">
@@ -354,12 +451,12 @@ export default function NewProductPage() {
                       conditionGrade: e.target.value as ConditionGrade,
                     })
                   }
-                  className="w-full p-3 border border-border rounded-lg focus:ring-2 focus:ring-primary bg-surface"
+                  className="w-full px-3 py-2 rounded-md border border-border bg-background"
                   required
                 >
-                  {conditionGrades.map((grade) => (
-                    <option key={grade.value} value={grade.value}>
-                      {grade.label} - {grade.description}
+                  {conditionGrades.map((g) => (
+                    <option key={g.value} value={g.value}>
+                      {g.label} — {g.description}
                     </option>
                   ))}
                 </select>
@@ -371,257 +468,235 @@ export default function NewProductPage() {
                 </label>
                 <Input
                   type="number"
+                  inputMode="numeric"
+                  min={0}
+                  max={60}
                   value={productData.warrantyMonths}
                   onChange={(e) =>
                     setProductData({
                       ...productData,
-                      warrantyMonths: parseInt(e.target.value),
+                      warrantyMonths: parseInt(e.target.value || "0"),
                     })
                   }
-                  min="0"
-                  max="60"
                 />
               </div>
             </div>
+
+            {/* Context line (nice touch) */}
+            {(brandName || categoryName) && (
+              <div className="rounded-md border border-border bg-background-tertiary px-3 py-2 text-[12px] text-foreground-secondary">
+                <span className="mr-2">You’re creating:</span>
+                <Badge className="border bg-background px-2 py-0.5 text-xs">
+                  {brandName || "—"}
+                </Badge>
+                <span className="mx-1">·</span>
+                <Badge className="border bg-background px-2 py-0.5 text-xs">
+                  {categoryName || "—"}
+                </Badge>
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        {/* Product Variants */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Product Variants</CardTitle>
+        {/* Variants */}
+        <Card className="shadow-sm">
+          <CardHeader className="border-b border-border p-4 sm:p-5 flex items-center justify-between">
+            <CardTitle className="text-lg">Product Variants</CardTitle>
             <Button type="button" variant="outline" onClick={addVariant}>
               <HiPlus className="w-4 h-4 mr-2" />
               Add Variant
             </Button>
           </CardHeader>
-          <CardContent className="space-y-6">
-            {variants.map((variant, index) => (
-              <div
-                key={index}
-                className="p-4 border border-border rounded-lg space-y-4"
-              >
-                <div className="flex items-center justify-between">
-                  <h4 className="font-medium">Variant {index + 1}</h4>
-                  {variants.length > 1 && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeVariant(index)}
-                      className="text-error hover:bg-error/10"
-                    >
-                      <HiTrash className="w-4 h-4" />
-                    </Button>
-                  )}
-                </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      SKU *
-                    </label>
-                    <Input
-                      type="text"
-                      value={variant.sku}
-                      onChange={(e) =>
-                        updateVariant(index, "sku", e.target.value)
-                      }
+          <CardContent className="p-4 sm:p-5 space-y-6">
+            {variants.map((v, index) => {
+              const d = discountPercent(v.priceMrp, v.priceSale);
+              const inclTax =
+                v.priceSale && v.taxRate >= 0
+                  ? v.priceSale * (1 + (v.taxRate || 0) / 100)
+                  : 0;
+
+              return (
+                <div
+                  key={index}
+                  className="p-4 rounded-lg border border-border bg-background space-y-4"
+                >
+                  {/* Header row */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-3">
+                      <h4 className="font-medium">Variant {index + 1}</h4>
+                      {v.priceMrp > 0 && v.priceSale > 0 && (
+                        <Badge className="border bg-success/10 text-success border-success/20">
+                          {d ? `Discount ${pct(d)}` : "No discount"}
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        title="Duplicate"
+                        onClick={() => duplicateVariant(index)}
+                      >
+                        <HiDuplicate className="w-4 h-4" />
+                      </Button>
+                      {variants.length > 1 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="text-error hover:bg-error/10"
+                          title="Remove"
+                          onClick={() => removeVariant(index)}
+                        >
+                          <HiTrash className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Row 1 */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <Field
+                      label="SKU *"
+                      required
                       placeholder="PROD-001"
-                      required
+                      value={v.sku}
+                      onChange={(val) => updateVariant(index, "sku", val)}
                     />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Color
-                    </label>
-                    <Input
-                      type="text"
-                      value={variant.color}
-                      onChange={(e) =>
-                        updateVariant(index, "color", e.target.value)
-                      }
+                    <Field
+                      label="Color"
                       placeholder="Black"
+                      value={v.color}
+                      onChange={(val) => updateVariant(index, "color", val)}
                     />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      MPN
-                    </label>
-                    <Input
-                      type="text"
-                      value={variant.mpn}
-                      onChange={(e) =>
-                        updateVariant(index, "mpn", e.target.value)
-                      }
+                    <Field
+                      label="MPN"
                       placeholder="Manufacturer part number"
+                      value={v.mpn}
+                      onChange={(val) => updateVariant(index, "mpn", val)}
                     />
                   </div>
-                </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Storage (GB)
-                    </label>
-                    <Input
-                      type="number"
-                      value={variant.storageGb || ""}
-                      onChange={(e) =>
-                        updateVariant(
-                          index,
-                          "storageGb",
-                          e.target.value ? parseInt(e.target.value) : null
-                        )
-                      }
+                  {/* Row 2 */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <NumberField
+                      label="Storage (GB)"
                       placeholder="128"
+                      value={v.storageGb}
+                      onChange={(num) => updateVariant(index, "storageGb", num)}
+                      min={0}
                     />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      RAM (GB)
-                    </label>
-                    <Input
-                      type="number"
-                      value={variant.ramGb || ""}
-                      onChange={(e) =>
-                        updateVariant(
-                          index,
-                          "ramGb",
-                          e.target.value ? parseInt(e.target.value) : null
-                        )
-                      }
+                    <NumberField
+                      label="RAM (GB)"
                       placeholder="8"
+                      value={v.ramGb}
+                      onChange={(num) => updateVariant(index, "ramGb", num)}
+                      min={0}
                     />
                   </div>
-                </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      MRP *
-                    </label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={variant.priceMrp || ""}
-                      onChange={(e) =>
-                        updateVariant(
-                          index,
-                          "priceMrp",
-                          parseFloat(e.target.value) || 0
-                        )
-                      }
+                  {/* Row 3 - Pricing */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <NumberField
+                      label="MRP *"
                       placeholder="29999.00"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Sale Price *
-                    </label>
-                    <Input
-                      type="number"
+                      value={v.priceMrp}
                       step="0.01"
-                      value={variant.priceSale || ""}
-                      onChange={(e) =>
-                        updateVariant(
-                          index,
-                          "priceSale",
-                          parseFloat(e.target.value) || 0
-                        )
+                      min={0}
+                      required
+                      onChange={(num) =>
+                        updateVariant(index, "priceMrp", num || 0)
                       }
+                    />
+                    <NumberField
+                      label="Sale Price *"
                       placeholder="24999.00"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Tax Rate (%)
-                    </label>
-                    <Input
-                      type="number"
+                      value={v.priceSale}
                       step="0.01"
-                      value={variant.taxRate || ""}
-                      onChange={(e) =>
-                        updateVariant(
-                          index,
-                          "taxRate",
-                          parseFloat(e.target.value) || 0
-                        )
+                      min={0}
+                      required
+                      onChange={(num) =>
+                        updateVariant(index, "priceSale", num || 0)
                       }
+                    />
+                    <NumberField
+                      label="Tax Rate (%)"
                       placeholder="18.00"
+                      value={v.taxRate}
+                      step="0.01"
+                      min={0}
+                      max={100}
+                      onChange={(num) =>
+                        updateVariant(index, "taxRate", num || 0)
+                      }
                     />
                   </div>
-                </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Weight (Grams)
-                    </label>
-                    <Input
-                      type="number"
-                      value={variant.weightGrams || ""}
-                      onChange={(e) =>
-                        updateVariant(
-                          index,
-                          "weightGrams",
-                          e.target.value ? parseInt(e.target.value) : null
-                        )
-                      }
+                  {/* Quick price insight */}
+                  <div className="rounded-md bg-background-tertiary border border-border px-3 py-2 text-[12px] text-foreground-secondary">
+                    {v.priceSale > 0 ? (
+                      <div className="flex flex-wrap gap-3">
+                        <span>
+                          Incl. tax price:{" "}
+                          <span className="font-medium">
+                            ₹{Math.round(inclTax).toLocaleString("en-IN")}
+                          </span>
+                        </span>
+                        {d > 0 ? (
+                          <span>
+                            You’re offering{" "}
+                            <span className="font-medium">{pct(d)}</span> off
+                            MRP.
+                          </span>
+                        ) : (
+                          <span>No discount vs MRP.</span>
+                        )}
+                      </div>
+                    ) : (
+                      <span>Enter Sale Price to see tax & discount info.</span>
+                    )}
+                  </div>
+
+                  {/* Row 4 - Inventory */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <NumberField
+                      label="Weight (Grams)"
                       placeholder="500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Initial Stock
-                    </label>
-                    <Input
-                      type="number"
-                      value={variant.quantity || ""}
-                      onChange={(e) =>
-                        updateVariant(
-                          index,
-                          "quantity",
-                          parseInt(e.target.value) || 0
-                        )
+                      value={v.weightGrams}
+                      min={0}
+                      onChange={(num) =>
+                        updateVariant(index, "weightGrams", num)
                       }
+                    />
+                    <NumberField
+                      label="Initial Stock"
                       placeholder="10"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Safety Stock
-                    </label>
-                    <Input
-                      type="number"
-                      value={variant.safetyStock || ""}
-                      onChange={(e) =>
-                        updateVariant(
-                          index,
-                          "safetyStock",
-                          parseInt(e.target.value) || 0
-                        )
+                      value={v.quantity}
+                      min={0}
+                      onChange={(num) =>
+                        updateVariant(index, "quantity", num || 0)
                       }
+                    />
+                    <NumberField
+                      label="Safety Stock"
                       placeholder="5"
+                      value={v.safetyStock}
+                      min={0}
+                      onChange={(num) =>
+                        updateVariant(index, "safetyStock", num || 0)
+                      }
                     />
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </CardContent>
         </Card>
 
-        {/* Submit */}
-        <div className="flex items-center justify-end space-x-4">
+        {/* Submit Bar */}
+        <div className="flex items-center justify-end gap-3">
           <Link href="/admin/products">
             <Button type="button" variant="outline">
               Cancel
@@ -632,6 +707,81 @@ export default function NewProductPage() {
           </Button>
         </div>
       </form>
+    </div>
+  );
+}
+
+/* ---------- small field components ---------- */
+
+function Field({
+  label,
+  value,
+  onChange,
+  placeholder,
+  required,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  required?: boolean;
+}) {
+  return (
+    <div>
+      <label className="block text-sm font-medium mb-2">
+        {label} {required ? "*" : ""}
+      </label>
+      <Input
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        required={required}
+      />
+    </div>
+  );
+}
+
+function NumberField({
+  label,
+  value,
+  onChange,
+  placeholder,
+  min,
+  max,
+  step,
+  required,
+}: {
+  label: string;
+  value: number | null;
+  onChange: (v: number | null) => void;
+  placeholder?: string;
+  min?: number;
+  max?: number;
+  step?: string;
+  required?: boolean;
+}) {
+  return (
+    <div>
+      <label className="block text-sm font-medium mb-2">
+        {label} {required ? "*" : ""}
+      </label>
+      <Input
+        type="number"
+        inputMode="decimal"
+        step={step || "1"}
+        min={min as any}
+        max={max as any}
+        value={value ?? ""}
+        onChange={(e) => {
+          const raw = e.target.value;
+          if (raw === "") return onChange(null);
+          const num = Number(raw);
+          onChange(Number.isFinite(num) ? num : null);
+        }}
+        placeholder={placeholder}
+        required={required}
+      />
     </div>
   );
 }
