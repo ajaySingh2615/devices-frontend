@@ -13,6 +13,9 @@ import {
   paymentApi,
   CreateRazorpayOrderRequest,
   VerifyPaymentRequest,
+  orderApi,
+  PlaceOrderRequest,
+  cartApiWithCoupons,
 } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -182,8 +185,40 @@ export default function CheckoutPage() {
 
               if (verifyResponse.verified) {
                 toast.success("Payment successful!");
-                // TODO: Create order and redirect to success page
-                window.location.href = `/order/success?orderId=${verifyResponse.orderId}`;
+
+                // Create order after successful payment
+                try {
+                  const placeOrderRequest: PlaceOrderRequest = {
+                    addressId: selectedAddressId,
+                    paymentMethod: "RAZORPAY",
+                    couponCode: couponCode || undefined,
+                    orderNotes: "",
+                    deliveryInstructions: "",
+                    razorpayOrderId: response.razorpay_order_id,
+                    razorpayPaymentId: response.razorpay_payment_id,
+                    razorpaySignature: response.razorpay_signature,
+                  };
+
+                  const orderResponse = await orderApi.placeOrder(
+                    placeOrderRequest
+                  );
+
+                  if (orderResponse.success) {
+                    try {
+                      await cartApiWithCoupons.clearCart();
+                      window.dispatchEvent(new CustomEvent("cartUpdated"));
+                    } catch {}
+                    toast.success("Order placed successfully!");
+                    window.location.href = `/order/success?orderId=${orderResponse.orderId}`;
+                  } else {
+                    toast.error("Failed to place order");
+                  }
+                } catch (orderError: any) {
+                  console.error("Order placement error:", orderError);
+                  toast.error(
+                    "Payment successful but order placement failed. Please contact support."
+                  );
+                }
               } else {
                 toast.error("Payment verification failed");
               }

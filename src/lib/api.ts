@@ -1407,6 +1407,95 @@ export const addressApi = {
   },
 };
 
+// Order API types and methods
+export interface PlaceOrderRequest {
+  addressId: string;
+  paymentMethod: string;
+  couponCode?: string;
+  orderNotes?: string;
+  deliveryInstructions?: string;
+  razorpayOrderId?: string;
+  razorpayPaymentId?: string;
+  razorpaySignature?: string;
+}
+
+export interface PlaceOrderResponse {
+  orderId: string;
+  message: string;
+  success: boolean;
+  status: string;
+  paymentStatus: string;
+}
+
+export interface OrderItemDto {
+  id: string;
+  variantId: string;
+  title: string;
+  sku: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+  taxRate: number;
+  taxAmount: number;
+  productSnapshot: string;
+}
+
+export interface OrderAddressDto {
+  id: string;
+  type: "BILLING" | "SHIPPING";
+  name: string;
+  phone: string;
+  line1: string;
+  line2: string;
+  city: string;
+  state: string;
+  country: string;
+  pincode: string;
+}
+
+export interface OrderDto {
+  id: string;
+  userId: string;
+  status: string;
+  subtotal: number;
+  discountTotal: number;
+  taxTotal: number;
+  shippingTotal: number;
+  grandTotal: number;
+  currency: string;
+  paymentStatus: string;
+  paymentMethod: string;
+  razorpayOrderId: string;
+  razorpayPaymentId: string;
+  codFlag: boolean;
+  appliedCouponCode: string;
+  orderNotes: string;
+  deliveryInstructions: string;
+  estimatedDeliveryDate: string;
+  actualDeliveryDate: string;
+  createdAt: string;
+  updatedAt: string;
+  items: OrderItemDto[];
+  addresses: OrderAddressDto[];
+}
+
+export const orderApi = {
+  placeOrder: async (
+    request: PlaceOrderRequest
+  ): Promise<PlaceOrderResponse> => {
+    const response = await api.post("/api/v1/orders", request);
+    return response.data;
+  },
+  getUserOrders: async (): Promise<OrderDto[]> => {
+    const response = await api.get("/api/v1/orders");
+    return response.data;
+  },
+  getOrderById: async (orderId: string): Promise<OrderDto> => {
+    const response = await api.get(`/api/v1/orders/${orderId}`);
+    return response.data;
+  },
+};
+
 // Health check API
 export const healthApi = {
   check: async () => {
