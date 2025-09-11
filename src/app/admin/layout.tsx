@@ -8,6 +8,7 @@ import {
   HiViewGrid,
   HiCollection,
   HiTag,
+  HiClipboardList,
   HiPhotograph,
   HiUsers,
   HiChartBar,
@@ -25,6 +26,7 @@ import AdminProtection from "@/components/admin/AdminProtection";
 
 const adminNavItems = [
   { href: "/admin", icon: HiHome, label: "Dashboard" },
+  { href: "/admin/orders", icon: HiClipboardList, label: "Orders" },
   { href: "/admin/products", icon: HiViewGrid, label: "Products" },
   { href: "/admin/categories", icon: HiCollection, label: "Categories" },
   { href: "/admin/brands", icon: HiTag, label: "Brands" },

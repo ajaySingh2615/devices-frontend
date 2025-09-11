@@ -1505,6 +1505,32 @@ export const orderApi = {
   },
 };
 
+// Admin Orders API
+export const adminOrdersApi = {
+  listPaginated: async (
+    page: number = 0,
+    size: number = 10
+  ): Promise<PageResponse<OrderDto>> => {
+    const response = await api.get("/api/v1/orders/admin/paginated", {
+      params: { page, size },
+    });
+    return response.data;
+  },
+
+  getById: async (orderId: string): Promise<OrderDto> => {
+    const response = await api.get(`/api/v1/orders/${orderId}`);
+    return response.data;
+  },
+
+  updateStatus: async (orderId: string, status: string): Promise<OrderDto> => {
+    // Placeholder – backend endpoint to be added later
+    const response = await api.patch(`/api/v1/orders/admin/${orderId}/status`, {
+      status,
+    });
+    return response.data;
+  },
+};
+
 // Health check API
 export const healthApi = {
   check: async () => {
