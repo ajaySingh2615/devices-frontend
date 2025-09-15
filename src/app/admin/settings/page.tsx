@@ -1,21 +1,24 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-hot-toast";
 import {
-  HiCog,
-  HiMail,
   HiGlobe,
   HiShieldCheck,
   HiDatabase,
   HiColorSwatch,
+  HiMail,
   HiSave,
   HiRefresh,
+  HiDownload,
+  HiUpload,
 } from "react-icons/hi";
-
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+
+type ThemeMode = "light" | "dark" | "auto";
+type Role = "USER" | "ADMIN";
 
 interface SiteSettings {
   siteName: string;
@@ -27,7 +30,7 @@ interface SiteSettings {
   enableRegistration: boolean;
   enableGoogleAuth: boolean;
   enablePhoneAuth: boolean;
-  defaultUserRole: "USER" | "ADMIN";
+  defaultUserRole: Role;
   maxFileUploadSize: number;
   allowedFileTypes: string[];
   sessionTimeout: number;
@@ -36,70 +39,124 @@ interface SiteSettings {
   currency: string;
   timezone: string;
   dateFormat: string;
-  theme: "light" | "dark" | "auto";
+  theme: ThemeMode;
 }
 
+const DEFAULTS: SiteSettings = {
+  siteName: "DeviceHub",
+  siteDescription: "Refurbished Electronics Marketplace",
+  siteUrl: "https://devicehub.com",
+  adminEmail: "admin@devicehub.com",
+  supportEmail: "support@devicehub.com",
+  maintenanceMode: false,
+  enableRegistration: true,
+  enableGoogleAuth: true,
+  enablePhoneAuth: true,
+  defaultUserRole: "USER",
+  maxFileUploadSize: 10,
+  allowedFileTypes: ["jpg", "jpeg", "png", "gif", "pdf", "doc", "docx"],
+  sessionTimeout: 30,
+  enableEmailNotifications: true,
+  enableSMSNotifications: false,
+  currency: "INR",
+  timezone: "Asia/Kolkata",
+  dateFormat: "DD/MM/YYYY",
+  theme: "light",
+};
+
+type TabId = "general" | "auth" | "files" | "notifications" | "appearance";
+const TABS: Array<{ id: TabId; label: string; icon: any }> = [
+  { id: "general", label: "General", icon: HiGlobe },
+  { id: "auth", label: "Authentication", icon: HiShieldCheck },
+  { id: "files", label: "File Management", icon: HiDatabase },
+  { id: "notifications", label: "Notifications", icon: HiMail },
+  { id: "appearance", label: "Appearance", icon: HiColorSwatch },
+];
+
 export default function AdminSettingsPage() {
-  const [settings, setSettings] = useState<SiteSettings>({
-    siteName: "DeviceHub",
-    siteDescription: "Refurbished Electronics Marketplace",
-    siteUrl: "https://devicehub.com",
-    adminEmail: "admin@devicehub.com",
-    supportEmail: "support@devicehub.com",
-    maintenanceMode: false,
-    enableRegistration: true,
-    enableGoogleAuth: true,
-    enablePhoneAuth: true,
-    defaultUserRole: "USER",
-    maxFileUploadSize: 10,
-    allowedFileTypes: ["jpg", "jpeg", "png", "gif", "pdf", "doc", "docx"],
-    sessionTimeout: 30,
-    enableEmailNotifications: true,
-    enableSMSNotifications: false,
-    currency: "INR",
-    timezone: "Asia/Kolkata",
-    dateFormat: "DD/MM/YYYY",
-    theme: "light",
-  });
-
+  const [settings, setSettings] = useState<SiteSettings>(DEFAULTS);
+  const [activeTab, setActiveTab] = useState<TabId>("general");
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<
-    "general" | "auth" | "files" | "notifications" | "appearance"
-  >("general");
+  const baselineRef = useRef<SiteSettings>(DEFAULTS);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
+  // ---- Load + baseline ------------------------------------------------------
   useEffect(() => {
-    loadSettings();
-  }, []);
-
-  const loadSettings = async () => {
     try {
-      // In a real implementation, load settings from backend
-      // const data = await adminApi.getSettings();
-      // setSettings(data);
-
-      // For now, using localStorage as demo
-      const savedSettings = localStorage.getItem("adminSettings");
-      if (savedSettings) {
-        setSettings({ ...settings, ...JSON.parse(savedSettings) });
+      const saved = localStorage.getItem("adminSettings");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        setSettings((prev) => ({ ...prev, ...parsed }));
+        baselineRef.current = { ...DEFAULTS, ...parsed };
+      } else {
+        baselineRef.current = DEFAULTS;
       }
-    } catch (error) {
-      console.error("Failed to load settings:", error);
+    } catch (e) {
+      console.error("Failed to load settings", e);
       toast.error("Failed to load settings");
     }
+  }, []);
+
+  // ---- Dirty state + beforeunload guard ------------------------------------
+  const dirty = useMemo(
+    () => JSON.stringify(settings) !== JSON.stringify(baselineRef.current),
+    [settings]
+  );
+
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (!dirty) return;
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [dirty]);
+
+  // ---- Small helpers --------------------------------------------------------
+  const updateSetting = <K extends keyof SiteSettings>(
+    key: K,
+    value: SiteSettings[K]
+  ) => setSettings((prev) => ({ ...prev, [key]: value }));
+
+  const validate = (): Record<string, string> => {
+    const errors: Record<string, string> = {};
+    try {
+      const u = new URL(settings.siteUrl);
+      if (!u.protocol.startsWith("http")) throw new Error();
+    } catch {
+      errors.siteUrl = "Enter a valid http(s) URL";
+    }
+    const emailRe = /^\S+@\S+\.\S+$/;
+    if (!emailRe.test(settings.adminEmail)) errors.adminEmail = "Invalid email";
+    if (!emailRe.test(settings.supportEmail))
+      errors.supportEmail = "Invalid email";
+    if (settings.maxFileUploadSize < 1)
+      errors.maxFileUploadSize = "Must be at least 1MB";
+    if (settings.sessionTimeout < 5) errors.sessionTimeout = "Min 5 minutes";
+    return errors;
   };
 
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // ---- Save / Reset / Backup / Restore -------------------------------------
   const saveSettings = async () => {
+    const errs = validate();
+    setErrors(errs);
+    if (Object.keys(errs).length) {
+      toast.error("Please fix the highlighted fields");
+      return;
+    }
     setLoading(true);
     try {
-      // In a real implementation, save to backend
-      // await adminApi.updateSettings(settings);
-
-      // For now, using localStorage as demo
+      // Persist to localStorage (replace with backend call when ready)
       localStorage.setItem("adminSettings", JSON.stringify(settings));
-
-      toast.success("Settings saved successfully");
-    } catch (error) {
-      console.error("Failed to save settings:", error);
+      baselineRef.current = settings;
+      toast.success("Settings saved");
+      // (Optional) apply theme immediately
+      applyTheme(settings.theme);
+    } catch (e) {
+      console.error("Save failed", e);
       toast.error("Failed to save settings");
     } finally {
       setLoading(false);
@@ -107,28 +164,62 @@ export default function AdminSettingsPage() {
   };
 
   const resetSettings = () => {
-    if (confirm("Are you sure you want to reset all settings to default?")) {
-      localStorage.removeItem("adminSettings");
-      window.location.reload();
+    if (!confirm("Reset all settings to default values?")) return;
+    localStorage.removeItem("adminSettings");
+    setSettings(DEFAULTS);
+    baselineRef.current = DEFAULTS;
+    applyTheme(DEFAULTS.theme);
+    toast.success("Settings reset");
+  };
+
+  const exportJson = () => {
+    const blob = new Blob([JSON.stringify(settings, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `settings_backup_${new Date()
+      .toISOString()
+      .slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("Settings exported");
+  };
+
+  const importJson = async (file: File) => {
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text) as SiteSettings;
+      // quick sanity check
+      if (!data.siteName || !data.siteUrl) throw new Error("Invalid file");
+      setSettings((prev) => ({ ...prev, ...data }));
+      toast.success("Settings imported (not saved yet)");
+    } catch (e) {
+      console.error(e);
+      toast.error("Invalid settings file");
     }
   };
 
-  const updateSetting = (key: keyof SiteSettings, value: any) => {
-    setSettings((prev) => ({ ...prev, [key]: value }));
+  const applyTheme = (mode: ThemeMode) => {
+    const root = document.documentElement;
+    root.removeAttribute("data-theme");
+    root.classList.remove("dark");
+    if (mode === "dark") {
+      root.classList.add("dark"); // use if you have dark styles
+    } else if (mode === "light") {
+      // light is default
+    } else {
+      // auto – rely on prefers-color-scheme
+    }
+    localStorage.setItem("theme", mode);
   };
 
-  const tabs = [
-    { id: "general", label: "General", icon: HiGlobe },
-    { id: "auth", label: "Authentication", icon: HiShieldCheck },
-    { id: "files", label: "File Management", icon: HiDatabase },
-    { id: "notifications", label: "Notifications", icon: HiMail },
-    { id: "appearance", label: "Appearance", icon: HiColorSwatch },
-  ] as const;
-
+  // ---- UI -------------------------------------------------------------------
   return (
-    <div className="space-y-6">
+    <div className="w-full px-4 sm:px-6 lg:px-8 py-5 space-y-5">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold font-display text-foreground">
             Settings
@@ -137,38 +228,68 @@ export default function AdminSettingsPage() {
             Configure your platform settings and preferences
           </p>
         </div>
-        <div className="flex items-center space-x-2">
-          <Button onClick={resetSettings} variant="outline">
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={exportJson}>
+            <HiDownload className="w-4 h-4 mr-2" />
+            Export JSON
+          </Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/json"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) importJson(f);
+              if (fileInputRef.current) fileInputRef.current.value = "";
+            }}
+          />
+          <Button
+            variant="outline"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <HiUpload className="w-4 h-4 mr-2" />
+            Import
+          </Button>
+          <Button variant="outline" onClick={resetSettings}>
             <HiRefresh className="w-4 h-4 mr-2" />
             Reset
           </Button>
-          <Button onClick={saveSettings} disabled={loading}>
+          <Button onClick={saveSettings} disabled={loading || !dirty}>
             <HiSave className="w-4 h-4 mr-2" />
-            {loading ? "Saving..." : "Save Changes"}
+            {loading ? "Saving..." : dirty ? "Save Changes" : "Saved"}
           </Button>
         </div>
       </div>
 
+      {/* Subheader: dirty hint */}
+      {dirty && (
+        <div className="p-3 rounded-lg bg-warning/10 text-warning text-sm border border-warning/20">
+          You have unsaved changes.
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Sidebar Navigation */}
+        {/* Sidebar */}
         <div className="lg:col-span-1">
           <Card>
             <CardContent className="p-0">
-              <nav className="space-y-1">
-                {tabs.map((tab) => {
-                  const Icon = tab.icon;
+              <nav className="space-y-1 sticky top-4">
+                {TABS.map((t) => {
+                  const Icon = t.icon;
+                  const active = activeTab === t.id;
                   return (
                     <button
-                      key={tab.id}
-                      onClick={() => setActiveTab(tab.id)}
+                      key={t.id}
+                      onClick={() => setActiveTab(t.id)}
                       className={`w-full flex items-center px-4 py-3 text-left transition-colors ${
-                        activeTab === tab.id
+                        active
                           ? "bg-primary/10 text-primary border-r-2 border-primary"
                           : "text-foreground-secondary hover:bg-background-secondary"
                       }`}
                     >
                       <Icon className="w-5 h-5 mr-3" />
-                      {tab.label}
+                      {t.label}
                     </button>
                   );
                 })}
@@ -177,8 +298,9 @@ export default function AdminSettingsPage() {
           </Card>
         </div>
 
-        {/* Settings Content */}
-        <div className="lg:col-span-3">
+        {/* Content */}
+        <div className="lg:col-span-3 space-y-6">
+          {/* GENERAL */}
           {activeTab === "general" && (
             <Card>
               <CardHeader>
@@ -189,49 +311,45 @@ export default function AdminSettingsPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Site Name
-                    </label>
+                  <Field
+                    label="Site Name"
+                    error={errors.siteName}
+                    description="Shown in title, emails, and invoices."
+                  >
                     <Input
-                      type="text"
                       value={settings.siteName}
                       onChange={(e) =>
                         updateSetting("siteName", e.target.value)
                       }
                     />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Site URL
-                    </label>
+                  </Field>
+
+                  <Field label="Site URL" error={errors.siteUrl}>
                     <Input
                       type="url"
                       value={settings.siteUrl}
                       onChange={(e) => updateSetting("siteUrl", e.target.value)}
+                      placeholder="https://your-domain.com"
                     />
-                  </div>
+                  </Field>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Site Description
-                  </label>
+                <Field
+                  label="Site Description"
+                  description="Short tagline for SEO and meta tags."
+                >
                   <textarea
+                    rows={3}
+                    className="w-full p-3 border border-border rounded-lg focus:ring-2 focus:ring-primary bg-surface resize-none"
                     value={settings.siteDescription}
                     onChange={(e) =>
                       updateSetting("siteDescription", e.target.value)
                     }
-                    rows={3}
-                    className="w-full p-3 border border-border rounded-lg focus:ring-2 focus:ring-primary bg-surface resize-none"
                   />
-                </div>
+                </Field>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Admin Email
-                    </label>
+                  <Field label="Admin Email" error={errors.adminEmail}>
                     <Input
                       type="email"
                       value={settings.adminEmail}
@@ -239,11 +357,9 @@ export default function AdminSettingsPage() {
                         updateSetting("adminEmail", e.target.value)
                       }
                     />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Support Email
-                    </label>
+                  </Field>
+
+                  <Field label="Support Email" error={errors.supportEmail}>
                     <Input
                       type="email"
                       value={settings.supportEmail}
@@ -251,83 +367,65 @@ export default function AdminSettingsPage() {
                         updateSetting("supportEmail", e.target.value)
                       }
                     />
-                  </div>
+                  </Field>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Currency
-                    </label>
+                  <Field label="Currency">
                     <select
+                      className="w-full p-3 border border-border rounded-lg focus:ring-2 focus:ring-primary bg-surface"
                       value={settings.currency}
                       onChange={(e) =>
                         updateSetting("currency", e.target.value)
                       }
-                      className="w-full p-3 border border-border rounded-lg focus:ring-2 focus:ring-primary bg-surface"
                     >
                       <option value="INR">INR (₹)</option>
                       <option value="USD">USD ($)</option>
                       <option value="EUR">EUR (€)</option>
                       <option value="GBP">GBP (£)</option>
                     </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Timezone
-                    </label>
+                  </Field>
+
+                  <Field label="Timezone">
                     <select
+                      className="w-full p-3 border border-border rounded-lg focus:ring-2 focus:ring-primary bg-surface"
                       value={settings.timezone}
                       onChange={(e) =>
                         updateSetting("timezone", e.target.value)
                       }
-                      className="w-full p-3 border border-border rounded-lg focus:ring-2 focus:ring-primary bg-surface"
                     >
                       <option value="Asia/Kolkata">Asia/Kolkata</option>
                       <option value="America/New_York">America/New_York</option>
                       <option value="Europe/London">Europe/London</option>
                       <option value="UTC">UTC</option>
                     </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Date Format
-                    </label>
+                  </Field>
+
+                  <Field label="Date Format">
                     <select
+                      className="w-full p-3 border border-border rounded-lg focus:ring-2 focus:ring-primary bg-surface"
                       value={settings.dateFormat}
                       onChange={(e) =>
                         updateSetting("dateFormat", e.target.value)
                       }
-                      className="w-full p-3 border border-border rounded-lg focus:ring-2 focus:ring-primary bg-surface"
                     >
                       <option value="DD/MM/YYYY">DD/MM/YYYY</option>
                       <option value="MM/DD/YYYY">MM/DD/YYYY</option>
                       <option value="YYYY-MM-DD">YYYY-MM-DD</option>
                     </select>
-                  </div>
+                  </Field>
                 </div>
 
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id="maintenanceMode"
-                    checked={settings.maintenanceMode}
-                    onChange={(e) =>
-                      updateSetting("maintenanceMode", e.target.checked)
-                    }
-                    className="rounded border-border focus:ring-primary"
-                  />
-                  <label
-                    htmlFor="maintenanceMode"
-                    className="text-sm font-medium"
-                  >
-                    Enable Maintenance Mode
-                  </label>
-                </div>
+                <Toggle
+                  label="Enable Maintenance Mode"
+                  checked={settings.maintenanceMode}
+                  onChange={(v) => updateSetting("maintenanceMode", v)}
+                />
               </CardContent>
             </Card>
           )}
 
+          {/* AUTH */}
           {activeTab === "auth" && (
             <Card>
               <CardHeader>
@@ -338,99 +436,59 @@ export default function AdminSettingsPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Default User Role
-                    </label>
+                  <Field label="Default User Role">
                     <select
+                      className="w-full p-3 border border-border rounded-lg focus:ring-2 focus:ring-primary bg-surface"
                       value={settings.defaultUserRole}
                       onChange={(e) =>
-                        updateSetting("defaultUserRole", e.target.value)
+                        updateSetting("defaultUserRole", e.target.value as Role)
                       }
-                      className="w-full p-3 border border-border rounded-lg focus:ring-2 focus:ring-primary bg-surface"
                     >
                       <option value="USER">User</option>
                       <option value="ADMIN">Admin</option>
                     </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Session Timeout (minutes)
-                    </label>
+                  </Field>
+
+                  <Field
+                    label="Session Timeout (minutes)"
+                    error={errors.sessionTimeout}
+                  >
                     <Input
                       type="number"
+                      min={5}
                       value={settings.sessionTimeout}
                       onChange={(e) =>
                         updateSetting(
                           "sessionTimeout",
-                          parseInt(e.target.value)
+                          parseInt(e.target.value || "0", 10)
                         )
                       }
-                      min="5"
-                      max="1440"
                     />
-                  </div>
+                  </Field>
                 </div>
 
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="enableRegistration"
-                      checked={settings.enableRegistration}
-                      onChange={(e) =>
-                        updateSetting("enableRegistration", e.target.checked)
-                      }
-                      className="rounded border-border focus:ring-primary"
-                    />
-                    <label
-                      htmlFor="enableRegistration"
-                      className="text-sm font-medium"
-                    >
-                      Enable User Registration
-                    </label>
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="enableGoogleAuth"
-                      checked={settings.enableGoogleAuth}
-                      onChange={(e) =>
-                        updateSetting("enableGoogleAuth", e.target.checked)
-                      }
-                      className="rounded border-border focus:ring-primary"
-                    />
-                    <label
-                      htmlFor="enableGoogleAuth"
-                      className="text-sm font-medium"
-                    >
-                      Enable Google Authentication
-                    </label>
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="enablePhoneAuth"
-                      checked={settings.enablePhoneAuth}
-                      onChange={(e) =>
-                        updateSetting("enablePhoneAuth", e.target.checked)
-                      }
-                      className="rounded border-border focus:ring-primary"
-                    />
-                    <label
-                      htmlFor="enablePhoneAuth"
-                      className="text-sm font-medium"
-                    >
-                      Enable Phone Authentication
-                    </label>
-                  </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <Toggle
+                    label="Enable User Registration"
+                    checked={settings.enableRegistration}
+                    onChange={(v) => updateSetting("enableRegistration", v)}
+                  />
+                  <Toggle
+                    label="Enable Google Authentication"
+                    checked={settings.enableGoogleAuth}
+                    onChange={(v) => updateSetting("enableGoogleAuth", v)}
+                  />
+                  <Toggle
+                    label="Enable Phone Authentication"
+                    checked={settings.enablePhoneAuth}
+                    onChange={(v) => updateSetting("enablePhoneAuth", v)}
+                  />
                 </div>
               </CardContent>
             </Card>
           )}
 
+          {/* FILES */}
           {activeTab === "files" && (
             <Card>
               <CardHeader>
@@ -440,29 +498,28 @@ export default function AdminSettingsPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Maximum File Upload Size (MB)
-                  </label>
+                <Field
+                  label="Maximum File Upload Size (MB)"
+                  error={errors.maxFileUploadSize}
+                >
                   <Input
                     type="number"
+                    min={1}
                     value={settings.maxFileUploadSize}
                     onChange={(e) =>
                       updateSetting(
                         "maxFileUploadSize",
-                        parseInt(e.target.value)
+                        parseInt(e.target.value || "0", 10)
                       )
                     }
-                    min="1"
-                    max="100"
                   />
-                </div>
+                </Field>
 
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Allowed File Types
-                  </label>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                <Field
+                  label="Allowed File Types"
+                  description="Choose extensions permitted for uploads."
+                >
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
                     {[
                       "jpg",
                       "jpeg",
@@ -474,40 +531,48 @@ export default function AdminSettingsPage() {
                       "txt",
                       "csv",
                       "xlsx",
-                    ].map((type) => (
-                      <div key={type} className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          id={`filetype-${type}`}
-                          checked={settings.allowedFileTypes.includes(type)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              updateSetting("allowedFileTypes", [
-                                ...settings.allowedFileTypes,
-                                type,
-                              ]);
-                            } else {
-                              updateSetting(
-                                "allowedFileTypes",
-                                settings.allowedFileTypes.filter(
-                                  (t) => t !== type
-                                )
-                              );
-                            }
-                          }}
-                          className="rounded border-border focus:ring-primary"
-                        />
-                        <label htmlFor={`filetype-${type}`} className="text-sm">
+                    ].map((type) => {
+                      const checked = settings.allowedFileTypes.includes(type);
+                      return (
+                        <label
+                          key={type}
+                          className={`px-3 py-2 rounded-lg border cursor-pointer text-sm ${
+                            checked
+                              ? "bg-primary/10 border-primary text-primary"
+                              : "border-border"
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            className="hidden"
+                            checked={checked}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                updateSetting("allowedFileTypes", [
+                                  ...settings.allowedFileTypes,
+                                  type,
+                                ]);
+                              } else {
+                                updateSetting(
+                                  "allowedFileTypes",
+                                  settings.allowedFileTypes.filter(
+                                    (t) => t !== type
+                                  )
+                                );
+                              }
+                            }}
+                          />
                           .{type}
                         </label>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
-                </div>
+                </Field>
               </CardContent>
             </Card>
           )}
 
+          {/* NOTIFICATIONS */}
           {activeTab === "notifications" && (
             <Card>
               <CardHeader>
@@ -517,48 +582,19 @@ export default function AdminSettingsPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="enableEmailNotifications"
-                      checked={settings.enableEmailNotifications}
-                      onChange={(e) =>
-                        updateSetting(
-                          "enableEmailNotifications",
-                          e.target.checked
-                        )
-                      }
-                      className="rounded border-border focus:ring-primary"
-                    />
-                    <label
-                      htmlFor="enableEmailNotifications"
-                      className="text-sm font-medium"
-                    >
-                      Enable Email Notifications
-                    </label>
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="enableSMSNotifications"
-                      checked={settings.enableSMSNotifications}
-                      onChange={(e) =>
-                        updateSetting(
-                          "enableSMSNotifications",
-                          e.target.checked
-                        )
-                      }
-                      className="rounded border-border focus:ring-primary"
-                    />
-                    <label
-                      htmlFor="enableSMSNotifications"
-                      className="text-sm font-medium"
-                    >
-                      Enable SMS Notifications
-                    </label>
-                  </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <Toggle
+                    label="Enable Email Notifications"
+                    checked={settings.enableEmailNotifications}
+                    onChange={(v) =>
+                      updateSetting("enableEmailNotifications", v)
+                    }
+                  />
+                  <Toggle
+                    label="Enable SMS Notifications"
+                    checked={settings.enableSMSNotifications}
+                    onChange={(v) => updateSetting("enableSMSNotifications", v)}
+                  />
                 </div>
 
                 <div className="p-4 bg-background-secondary rounded-lg">
@@ -567,18 +603,16 @@ export default function AdminSettingsPage() {
                     Configure which events trigger notifications to users and
                     administrators.
                   </p>
-                  <div className="mt-3 space-y-2">
-                    <div className="text-sm">
-                      <strong>User Events:</strong> Registration, Login,
-                      Password Reset
+                  <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm">
+                    <div>
+                      <strong>User:</strong> Registration, Login, Password Reset
                     </div>
-                    <div className="text-sm">
-                      <strong>Order Events:</strong> Order Placed, Payment
-                      Confirmed, Shipped
+                    <div>
+                      <strong>Order:</strong> Order Placed, Payment Confirmed,
+                      Shipped
                     </div>
-                    <div className="text-sm">
-                      <strong>Admin Events:</strong> New User, Low Stock, System
-                      Alerts
+                    <div>
+                      <strong>Admin:</strong> New User, Low Stock, System Alerts
                     </div>
                   </div>
                 </div>
@@ -586,6 +620,7 @@ export default function AdminSettingsPage() {
             </Card>
           )}
 
+          {/* APPEARANCE */}
           {activeTab === "appearance" && (
             <Card>
               <CardHeader>
@@ -595,50 +630,39 @@ export default function AdminSettingsPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Theme
-                  </label>
+                <Field label="Theme">
                   <select
-                    value={settings.theme}
-                    onChange={(e) => updateSetting("theme", e.target.value)}
                     className="w-full p-3 border border-border rounded-lg focus:ring-2 focus:ring-primary bg-surface"
+                    value={settings.theme}
+                    onChange={(e) =>
+                      updateSetting("theme", e.target.value as ThemeMode)
+                    }
+                    onBlur={() => applyTheme(settings.theme)}
                   >
                     <option value="light">Light</option>
                     <option value="dark">Dark</option>
                     <option value="auto">Auto (System)</option>
                   </select>
-                </div>
+                </Field>
 
                 <div className="p-4 bg-background-secondary rounded-lg">
                   <h4 className="font-medium mb-2">Color Scheme</h4>
                   <p className="text-sm text-foreground-secondary mb-3">
-                    Current theme uses the following color palette:
+                    Using your global theme tokens:
                   </p>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <div className="text-center">
-                      <div className="w-12 h-12 bg-primary rounded-lg mx-auto mb-2"></div>
-                      <span className="text-sm">Primary</span>
-                    </div>
-                    <div className="text-center">
-                      <div className="w-12 h-12 bg-secondary rounded-lg mx-auto mb-2"></div>
-                      <span className="text-sm">Secondary</span>
-                    </div>
-                    <div className="text-center">
-                      <div className="w-12 h-12 bg-accent rounded-lg mx-auto mb-2"></div>
-                      <span className="text-sm">Accent</span>
-                    </div>
-                    <div className="text-center">
-                      <div className="w-12 h-12 bg-warning rounded-lg mx-auto mb-2"></div>
-                      <span className="text-sm">Warning</span>
-                    </div>
+                    <Swatch name="Primary" className="bg-primary" />
+                    <Swatch name="Secondary" className="bg-secondary" />
+                    <Swatch name="Accent" className="bg-accent" />
+                    <Swatch name="Warning" className="bg-warning" />
                   </div>
                 </div>
 
                 <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
                   <p className="text-sm text-blue-800">
-                    <strong>Note:</strong> Theme customization and advanced
-                    branding options will be available in future updates.
+                    <strong>Note:</strong> Advanced theme customization can hook
+                    into your CSS tokens (e.g., setting <code>data-theme</code>{" "}
+                    on <code>html</code>) when you’re ready.
                   </p>
                 </div>
               </CardContent>
@@ -646,6 +670,74 @@ export default function AdminSettingsPage() {
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+/* ---------- tiny presentational helpers ---------- */
+function Field({
+  label,
+  description,
+  error,
+  children,
+}: {
+  label: string;
+  description?: string;
+  error?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <label className="block text-sm font-medium mb-2">{label}</label>
+      {children}
+      {description && (
+        <p className="text-xs text-foreground-secondary mt-1">{description}</p>
+      )}
+      {error && <p className="text-xs text-error mt-1">{error}</p>}
+    </div>
+  );
+}
+
+function Toggle({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onChange(!checked)}
+      className={`w-full flex items-center justify-between px-3 py-2 border rounded-lg ${
+        checked ? "border-secondary bg-secondary/10" : "border-border"
+      }`}
+      aria-pressed={checked}
+      role="switch"
+    >
+      <span className="text-sm">{label}</span>
+      <span
+        className={`inline-flex h-5 w-10 rounded-full transition ${
+          checked ? "bg-secondary" : "bg-border-dark"
+        }`}
+      >
+        <span
+          className={`inline-block h-5 w-5 bg-white rounded-full transform transition ${
+            checked ? "translate-x-5" : "translate-x-0"
+          }`}
+        />
+      </span>
+    </button>
+  );
+}
+
+function Swatch({ name, className }: { name: string; className: string }) {
+  return (
+    <div className="text-center">
+      <div className={`w-12 h-12 rounded-lg mx-auto mb-2 ${className}`} />
+      <span className="text-sm">{name}</span>
     </div>
   );
 }
