@@ -54,22 +54,21 @@ export default function AdminLayout({
 
   return (
     <AdminProtection>
-      <div className="min-h-screen bg-background-secondary flex overflow-x-hidden">
-        {/* Mobile sidebar backdrop */}
+      <div className="min-h-screen bg-background-secondary overflow-x-hidden">
+        {/* Mobile overlay */}
         {sidebarOpen && (
           <div
-            className="fixed inset-0 z-40 lg:hidden"
+            className="fixed inset-0 z-40 lg:hidden bg-black/50"
             onClick={() => setSidebarOpen(false)}
-          >
-            <div className="absolute inset-0 bg-black opacity-50"></div>
-          </div>
+          />
         )}
 
         {/* Sidebar */}
-        <div
-          className={`fixed inset-y-0 left-0 z-50 w-64 bg-surface border-r border-border transform transition-transform duration-200 ease-in-out lg:translate-x-0 lg:static lg:flex-shrink-0 ${
-            sidebarOpen ? "translate-x-0" : "-translate-x-full"
-          }`}
+        <aside
+          className={`fixed inset-y-0 left-0 z-50 w-64 bg-surface border-r border-border transform transition-transform duration-200 ease-in-out
+                      ${
+                        sidebarOpen ? "translate-x-0" : "-translate-x-full"
+                      } lg:translate-x-0 lg:fixed`}
         >
           <div className="flex flex-col h-full">
             {/* Logo */}
@@ -92,22 +91,22 @@ export default function AdminLayout({
               </Button>
             </div>
 
-            {/* Navigation */}
-            <nav className="flex-1 p-4 space-y-2">
+            {/* Nav (scrollable) */}
+            <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
               {adminNavItems.map((item) => {
                 const isActive =
                   pathname === item.href ||
                   (item.href !== "/admin" && pathname.startsWith(item.href));
-
                 return (
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
-                      isActive
-                        ? "bg-primary text-white"
-                        : "text-foreground-secondary hover:bg-background-secondary hover:text-foreground"
-                    }`}
+                    className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors
+                                ${
+                                  isActive
+                                    ? "bg-primary text-white"
+                                    : "text-foreground-secondary hover:bg-background-secondary hover:text-foreground"
+                                }`}
                     onClick={() => setSidebarOpen(false)}
                   >
                     <item.icon className="w-5 h-5" />
@@ -129,12 +128,12 @@ export default function AdminLayout({
               </Button>
             </div>
           </div>
-        </div>
+        </aside>
 
-        {/* Main content */}
-        <div className="flex-1 min-w-0 flex flex-col lg:ml-0 overflow-x-hidden">
-          {/* Top bar */}
-          <header className="bg-surface border-b border-border px-6 py-4 flex-shrink-0">
+        {/* Main column (pushed on desktop) */}
+        <div className="lg:ml-64 flex min-h-screen flex-col">
+          {/* Top bar (sticky) */}
+          <header className="sticky top-0 z-40 bg-surface/80 backdrop-blur supports-[backdrop-filter]:bg-surface/80 border-b border-border px-6 py-4">
             <div className="flex items-center justify-between">
               <Button
                 variant="ghost"
@@ -144,17 +143,15 @@ export default function AdminLayout({
               >
                 <HiMenu className="w-5 h-5" />
               </Button>
-
-              <div className="flex items-center space-x-4">
-                <div className="text-sm text-foreground-secondary">
-                  Welcome to DeviceHub Admin
-                </div>
+              <div className="text-sm text-foreground-secondary">
+                Welcome to DeviceHub Admin
               </div>
+              <div /> {/* right spacer */}
             </div>
           </header>
 
           {/* Page content */}
-          <main className="flex-1 p-6 min-w-0">{children}</main>
+          <main className="flex-1 min-w-0 p-6">{children}</main>
         </div>
       </div>
     </AdminProtection>
