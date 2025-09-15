@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-hot-toast";
 import {
   HiTrendingUp,
@@ -11,6 +11,8 @@ import {
   HiTag,
   HiExclamationCircle,
   HiClock,
+  HiRefresh,
+  HiDownload,
 } from "react-icons/hi";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -31,13 +33,16 @@ export default function AdminDashboard() {
   );
   const [lowStockAlerts, setLowStockAlerts] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [period, setPeriod] = useState<7 | 14 | 30>(30);
 
   useEffect(() => {
     loadDashboardData();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [period]);
 
   const loadDashboardData = async () => {
     try {
+      setLoading(true);
       const [
         statsData,
         salesChartData,
@@ -46,22 +51,67 @@ export default function AdminDashboard() {
         alertsData,
       ] = await Promise.all([
         adminApi.getDashboardStats(),
-        adminApi.getSalesChart(30),
+        adminApi.getSalesChart(period),
         adminApi.getTopProducts(5),
         adminApi.getRecentActivity(10),
         adminApi.getLowStockAlerts(),
       ]);
 
-      setStats(statsData);
-      setSalesData(salesChartData);
-      setTopProducts(topProductsData);
-      setRecentActivity(activityData);
-      setLowStockAlerts(alertsData);
+      setStats(statsData ?? null);
+      setSalesData(Array.isArray(salesChartData) ? salesChartData : []);
+      setTopProducts(Array.isArray(topProductsData) ? topProductsData : []);
+      setRecentActivity(Array.isArray(activityData) ? activityData : []);
+      setLowStockAlerts(Array.isArray(alertsData) ? alertsData : []);
     } catch (error) {
       console.error("Failed to load dashboard data:", error);
       toast.error("Failed to load dashboard data");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const currency = (n: number) =>
+    new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+      maximumFractionDigits: 0,
+    }).format(n || 0);
+
+  const safeRevenueSeries = useMemo(
+    () =>
+      (salesData ?? []).map((d) => ({
+        date: d.date,
+        value: (d as any).revenue ?? (d as any).sales ?? 0,
+      })),
+    [salesData]
+  );
+
+  const maxRevenue = useMemo(
+    () => Math.max(1, ...safeRevenueSeries.map((d) => d.value || 0)),
+    [safeRevenueSeries]
+  );
+
+  const exportSalesCsv = () => {
+    try {
+      if (!safeRevenueSeries.length) {
+        toast("No sales to export");
+        return;
+      }
+      const header = "Date,Revenue\n";
+      const rows = safeRevenueSeries
+        .map((d) => `${new Date(d.date).toISOString().slice(0, 10)},${d.value}`)
+        .join("\n");
+      const blob = new Blob([header + rows], {
+        type: "text/csv;charset=utf-8",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `sales_last_${period}_days.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      toast.error("Failed to export CSV");
     }
   };
 
@@ -74,15 +124,35 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="space-y-6 w-full">
+    <div className="space-y-6 w-full px-4 sm:px-6 lg:px-8 py-5">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold font-display text-foreground">
-          Dashboard
-        </h1>
-        <p className="text-foreground-secondary">
-          Overview of your e-commerce platform
-        </p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold font-display text-foreground">
+            Dashboard
+          </h1>
+          <p className="text-foreground-secondary">
+            Overview of your e-commerce platform
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <select
+            value={period}
+            onChange={(e) => setPeriod(Number(e.target.value) as 7 | 14 | 30)}
+            className="p-2 border border-border rounded-lg bg-surface"
+          >
+            <option value={7}>Last 7 days</option>
+            <option value={14}>Last 14 days</option>
+            <option value={30}>Last 30 days</option>
+          </select>
+          <button
+            onClick={loadDashboardData}
+            className="inline-flex items-center px-3 py-2 border rounded-lg text-sm hover:bg-background-secondary"
+            title="Refresh"
+          >
+            <HiRefresh className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       {/* Stats Grid */}
@@ -90,27 +160,27 @@ export default function AdminDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatsCard
             title="Total Products"
-            value={stats.totalProducts}
-            change={stats.productGrowthPercentage}
+            value={stats.totalProducts ?? 0}
+            change={stats.productGrowthPercentage ?? stats.productGrowth ?? 0}
             icon={HiViewGrid}
             color="blue"
           />
           <StatsCard
             title="Total Users"
-            value={stats.totalUsers}
-            change={stats.userGrowthPercentage}
+            value={stats.totalUsers ?? 0}
+            change={stats.userGrowthPercentage ?? stats.userGrowth ?? 0}
             icon={HiUsers}
             color="green"
           />
           <StatsCard
             title="Categories"
-            value={stats.totalCategories}
+            value={stats.totalCategories ?? 0}
             icon={HiCollection}
             color="purple"
           />
           <StatsCard
             title="Brands"
-            value={stats.totalBrands}
+            value={stats.totalBrands ?? 0}
             icon={HiTag}
             color="orange"
           />
@@ -126,7 +196,7 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-secondary">
-                {stats.inStockItems}
+                {Number(stats.inStockItems ?? 0).toLocaleString()}
               </div>
             </CardContent>
           </Card>
@@ -137,7 +207,7 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-warning">
-                {stats.lowStockItems}
+                {Number(stats.lowStockItems ?? 0).toLocaleString()}
               </div>
             </CardContent>
           </Card>
@@ -148,7 +218,7 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-error">
-                {stats.outOfStockItems}
+                {Number(stats.outOfStockItems ?? 0).toLocaleString()}
               </div>
             </CardContent>
           </Card>
@@ -158,36 +228,57 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Sales Chart */}
         <Card>
-          <CardHeader>
-            <CardTitle>Sales Overview (Last 30 Days)</CardTitle>
+          <CardHeader className="flex items-center justify-between">
+            <CardTitle>Sales Overview (Last {period} Days)</CardTitle>
+            <button
+              onClick={exportSalesCsv}
+              className="inline-flex items-center px-3 py-1.5 text-sm border rounded-md hover:bg-background-secondary"
+            >
+              <HiDownload className="w-4 h-4 mr-1" /> CSV
+            </button>
           </CardHeader>
           <CardContent>
-            {salesData.length > 0 ? (
+            {safeRevenueSeries.length > 0 ? (
               <div className="space-y-4">
                 <div className="text-sm text-foreground-secondary">
-                  Revenue trend over the last 30 days
+                  Revenue trend for the selected period
                 </div>
-                <div className="h-64 flex items-end justify-between space-x-1">
-                  {salesData.slice(-7).map((day, index) => (
-                    <div
-                      key={index}
-                      className="flex-1 flex flex-col items-center"
-                    >
-                      <div
-                        className="w-full bg-primary rounded-t"
-                        style={{
-                          height: `${
-                            (day.revenue /
-                              Math.max(...salesData.map((d) => d.revenue))) *
-                            200
-                          }px`,
-                        }}
-                      />
-                      <div className="text-xs text-foreground-muted mt-2">
-                        {new Date(day.date).getDate()}
-                      </div>
-                    </div>
-                  ))}
+                <div className="h-64 flex items-end justify-between gap-1">
+                  {safeRevenueSeries
+                    .slice(-Math.min(14, safeRevenueSeries.length))
+                    .map((day, i) => {
+                      const heightPx = Math.round(
+                        (day.value / maxRevenue) * 200
+                      ); // 0–200px
+                      return (
+                        <div
+                          key={day.date ?? i}
+                          className="flex-1 flex flex-col items-center group"
+                        >
+                          <div
+                            className="w-full bg-primary rounded-t transition-all duration-200 group-hover:opacity-80"
+                            style={{ height: `${heightPx}px` }}
+                            title={`${new Date(
+                              day.date
+                            ).toLocaleDateString()} • ${currency(day.value)}`}
+                          />
+                          <div className="text-[10px] text-foreground-muted mt-2">
+                            {new Date(day.date).getDate()}
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+                <div className="flex items-center justify-between text-xs text-foreground-secondary">
+                  <span>Total</span>
+                  <span className="font-medium">
+                    {currency(
+                      safeRevenueSeries.reduce(
+                        (acc, d) => acc + (d.value || 0),
+                        0
+                      )
+                    )}
+                  </span>
                 </div>
               </div>
             ) : (
@@ -205,28 +296,40 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {topProducts.length > 0 ? (
-                topProducts.map((product, index) => (
-                  <div
-                    key={product.productId}
-                    className="flex items-center justify-between"
-                  >
-                    <div>
-                      <div className="font-medium">{product.title}</div>
-                      <div className="text-sm text-foreground-secondary">
-                        {product.unitsSold} units sold
+              {topProducts && topProducts.length > 0 ? (
+                [...topProducts]
+                  .sort((a: any, b: any) => {
+                    const ra = a.totalRevenue ?? a.revenue ?? 0;
+                    const rb = b.totalRevenue ?? b.revenue ?? 0;
+                    return rb - ra;
+                  })
+                  .map((product: any, index) => {
+                    const title = product.productTitle ?? product.title ?? "—";
+                    const units = product.unitsSold ?? product.sales ?? 0;
+                    const revenue =
+                      product.totalRevenue ?? product.revenue ?? 0;
+                    return (
+                      <div
+                        key={product.productId ?? product.id ?? index}
+                        className="flex items-center justify-between"
+                      >
+                        <div>
+                          <div className="font-medium">{title}</div>
+                          <div className="text-sm text-foreground-secondary">
+                            {Number(units).toLocaleString()} units sold
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-bold text-primary">
+                            {currency(revenue)}
+                          </div>
+                          <div className="text-sm text-foreground-secondary">
+                            #{index + 1}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-bold text-primary">
-                        ₹{product.totalRevenue.toLocaleString()}
-                      </div>
-                      <div className="text-sm text-foreground-secondary">
-                        #{index + 1}
-                      </div>
-                    </div>
-                  </div>
-                ))
+                    );
+                  })
               ) : (
                 <div className="text-center text-foreground-secondary py-4">
                   No product data available
@@ -248,18 +351,30 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {recentActivity.length > 0 ? (
-                recentActivity.map((activity) => (
-                  <div key={activity.id} className="flex items-start space-x-3">
-                    <div className="w-2 h-2 bg-primary rounded-full mt-2" />
-                    <div className="flex-1">
-                      <div className="text-sm">{activity.description}</div>
-                      <div className="text-xs text-foreground-muted">
-                        {new Date(activity.timestamp).toLocaleString()}
+              {recentActivity && recentActivity.length > 0 ? (
+                recentActivity.map((activity: any, index) => {
+                  const desc =
+                    activity.description ??
+                    [activity.action, activity.details]
+                      .filter(Boolean)
+                      .join(" — ") ??
+                    "—";
+                  const ts = activity.timestamp;
+                  return (
+                    <div
+                      key={activity.id ?? index}
+                      className="flex items-start space-x-3"
+                    >
+                      <div className="w-2 h-2 bg-primary rounded-full mt-2" />
+                      <div className="flex-1">
+                        <div className="text-sm">{desc}</div>
+                        <div className="text-xs text-foreground-muted">
+                          {ts ? new Date(ts).toLocaleString() : "N/A"}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               ) : (
                 <div className="text-center text-foreground-secondary py-4">
                   No recent activity
@@ -279,7 +394,7 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {lowStockAlerts.length > 0 ? (
+              {lowStockAlerts && lowStockAlerts.length > 0 ? (
                 lowStockAlerts.map((alert, index) => (
                   <div
                     key={index}
@@ -321,7 +436,9 @@ function StatsCard({
     green: "text-secondary",
     purple: "text-purple-600",
     orange: "text-orange-600",
-  };
+  } as const;
+
+  const hasChange = typeof change === "number" && !Number.isNaN(change);
 
   return (
     <Card>
@@ -332,20 +449,20 @@ function StatsCard({
               {title}
             </p>
             <p className="text-3xl font-bold text-foreground">
-              {value.toLocaleString()}
+              {Number(value || 0).toLocaleString()}
             </p>
-            {change !== undefined && (
+            {hasChange && (
               <div
                 className={`flex items-center mt-2 text-sm ${
-                  change >= 0 ? "text-secondary" : "text-error"
+                  (change as number) >= 0 ? "text-secondary" : "text-error"
                 }`}
               >
-                {change >= 0 ? (
+                {(change as number) >= 0 ? (
                   <HiTrendingUp className="w-4 h-4 mr-1" />
                 ) : (
                   <HiTrendingDown className="w-4 h-4 mr-1" />
                 )}
-                {Math.abs(change).toFixed(1)}%
+                {Math.abs(change as number).toFixed(1)}%
               </div>
             )}
           </div>
