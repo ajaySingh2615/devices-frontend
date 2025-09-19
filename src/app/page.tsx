@@ -88,7 +88,6 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-background">
       {/* Sticky Assurance Bar (Cashify-like trust signals) */}
-      <AssuranceBar />
 
       {/* Hero Section with subtle parallax overlay */}
       <section className="home-hero">
@@ -124,6 +123,9 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Banner Carousel Section */}
+      <BannerCarousel />
+
       {/* Feature highlights (QC, Replacement, Warranty …) */}
       <RevealSection>
         <section className="home-section">
@@ -143,20 +145,6 @@ export default function Home() {
                 iconColor="var(--color-secondary)"
                 title="32-Point Quality Check"
                 sub="Every device is tested thoroughly for performance, battery, display & ports."
-              />
-              <FeatureCard
-                icon={<HiRefresh className="w-8 h-8" />}
-                iconBg="rgba(245,158,11,.10)"
-                iconColor="var(--color-accent)"
-                title="15-Day Replacement"
-                sub="If something’s off, we’ll replace it quickly—no long forms."
-              />
-              <FeatureCard
-                icon={<HiBadgeCheck className="w-8 h-8" />}
-                iconBg="rgba(37,99,235,.10)"
-                iconColor="var(--color-primary)"
-                title="6-Month Warranty"
-                sub="Peace of mind on all refurbished devices you buy from us."
               />
             </div>
           </div>
@@ -340,71 +328,126 @@ export default function Home() {
 
 /* ---------- Subcomponents ---------- */
 
-function AssuranceBar() {
+function BrandStrip() {
+  const brands = [
+    "Apple",
+    "Samsung",
+    "Microsoft",
+    "Dell",
+    "HP",
+    "Lenovo",
+    "ASUS",
+    "Acer",
+    "LG",
+    "MSI",
+    "Razer",
+    "Gigabyte",
+    "Huawei",
+    "HONOR",
+    "Xiaomi",
+    "Dynabook",
+    "VAIO",
+    "NEC",
+    "Panasonic",
+    "Framework",
+    "System76",
+    "TUXEDO",
+    "Purism",
+    "Medion",
+    "Chuwi",
+    "realme",
+    "Nokia",
+    "Infinix",
+    "TECNO",
+    "Jio",
+  ];
+
   return (
-    <div className="assurance-bar">
-      <div className="home-container assurance-flex">
-        <div className="assurance-item">
-          <HiShieldCheck className="assurance-ic" />
-          <span>Cashify-style QC</span>
+    <div className="brand-strip">
+      <div className="brand-marquee">
+        <div className="brand-track">
+          {brands.map((brand, i) => (
+            <div key={i} className="brand-pill">
+              <span className="brand-text">{brand}</span>
+            </div>
+          ))}
         </div>
-        <div className="assurance-item">
-          <HiRefresh className="assurance-ic" />
-          <span>15-Day Replacement</span>
-        </div>
-        <div className="assurance-item">
-          <HiBadgeCheck className="assurance-ic" />
-          <span>6-Month Warranty</span>
-        </div>
-        <div className="assurance-item">
-          <HiCreditCard className="assurance-ic" />
-          <span>No-Cost EMI*</span>
-        </div>
-        <div className="assurance-item">
-          <HiClock className="assurance-ic" />
-          <span>Fast Delivery</span>
+        <div className="brand-track brand-track-2">
+          {brands.map((brand, i) => (
+            <div key={`dup-${i}`} className="brand-pill">
+              <span className="brand-text">{brand}</span>
+            </div>
+          ))}
         </div>
       </div>
     </div>
   );
 }
 
-function BrandStrip() {
+function BannerCarousel() {
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  const banners = [
+    {
+      id: 1,
+      image: "/banners/banner-1.webp",
+    },
+    {
+      id: 2,
+      image: "/banners/banner-2.webp",
+    },
+  ];
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % banners.length);
+    }, 5000); // Change slide every 5 seconds
+
+    return () => clearInterval(interval);
+  }, [banners.length]);
+
+  const goToSlide = (index: number) => {
+    setCurrentSlide(index);
+  };
+
   return (
-    <div className="brand-strip">
-      <div className="brand-marquee">
-        <div className="brand-track">
-          {[
-            "Apple",
-            "Dell",
-            "HP",
-            "Lenovo",
-            "ASUS",
-            "Acer",
-            "Samsung",
-            "Microsoft",
-          ].map((b, i) => (
-            <div key={i} className="brand-pill">
-              {b}
-            </div>
-          ))}
-          {[
-            "Apple",
-            "Dell",
-            "HP",
-            "Lenovo",
-            "ASUS",
-            "Acer",
-            "Samsung",
-            "Microsoft",
-          ].map((b, i) => (
-            <div key={`dup-${i}`} className="brand-pill">
-              {b}
-            </div>
-          ))}
+    <section className="py-8 bg-background">
+      <div className="home-container">
+        <div className="relative h-80 rounded-xl overflow-hidden shadow-2xl">
+          {/* Banner Slides */}
+          <div className="relative w-full h-full">
+            {banners.map((banner, index) => (
+              <div
+                key={banner.id}
+                className={`absolute inset-0 transition-opacity duration-500 ease-in-out ${
+                  index === currentSlide ? "opacity-100" : "opacity-0"
+                }`}
+              >
+                <div
+                  className="w-full h-full bg-cover bg-center bg-no-repeat"
+                  style={{ backgroundImage: `url(${banner.image})` }}
+                />
+              </div>
+            ))}
+          </div>
+
+          {/* Navigation Dots */}
+          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
+            {banners.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => goToSlide(index)}
+                className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                  index === currentSlide
+                    ? "bg-white scale-125"
+                    : "bg-white/50 hover:bg-white/75"
+                }`}
+              />
+            ))}
+          </div>
         </div>
       </div>
-    </div>
+    </section>
   );
 }
 
