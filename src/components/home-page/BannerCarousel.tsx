@@ -29,7 +29,7 @@ export function BannerCarousel() {
   };
 
   return (
-    <section className="py-8 bg-background">
+    <section className="hidden lg:block py-8 bg-background">
       <div className="home-container">
         <div className="relative h-80 rounded-xl overflow-hidden shadow-2xl">
           {/* Banner Slides */}
@@ -42,7 +42,7 @@ export function BannerCarousel() {
                 }`}
               >
                 <div
-                  className="w-full h-full bg-cover bg-center bg-no-repeat"
+                  className="w-full h-full bg-no-repeat bg-center bg-cover"
                   style={{ backgroundImage: `url(${banner.image})` }}
                 />
               </div>
