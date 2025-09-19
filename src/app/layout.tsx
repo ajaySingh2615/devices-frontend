@@ -4,6 +4,7 @@ import { Toaster } from "react-hot-toast";
 import Navigation from "@/components/layout/Navigation";
 import { AuthProvider } from "@/hooks/useAuth";
 import "./globals.css";
+import "./home.css";
 
 const inter = Inter({
   variable: "--font-inter",

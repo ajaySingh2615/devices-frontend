@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -10,10 +10,51 @@ import {
   HiStar,
   HiArrowRight,
   HiRefresh,
+  HiBadgeCheck,
+  HiClock,
+  HiCreditCard,
 } from "react-icons/hi";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
 import { catalogApi, Category, Product } from "@/lib/api";
+import "./home.css";
+
+/* ---------- tiny in-view hook (no dependencies) ---------- */
+function useInView<T extends HTMLElement>(options?: IntersectionObserverInit) {
+  const ref = useRef<T | null>(null);
+  const [inView, setInView] = useState(false);
+
+  useEffect(() => {
+    if (!ref.current || inView) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) {
+            setInView(true);
+            io.disconnect();
+          }
+        });
+      },
+      { rootMargin: "0px 0px -10% 0px", threshold: 0.15, ...options }
+    );
+    io.observe(ref.current);
+    return () => io.disconnect();
+  }, [options, inView]);
+
+  return { ref, inView };
+}
+
+/* ---------- parallax hook for hero overlay ---------- */
+function useParallax() {
+  const [y, setY] = useState(0);
+  useEffect(() => {
+    const onScroll = () => setY(window.scrollY || 0);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+  return y;
+}
 
 export default function Home() {
   const router = useRouter();
@@ -22,44 +63,50 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadHomeData();
+    (async () => {
+      try {
+        const [categoriesData, productsData] = await Promise.all([
+          catalogApi.getCategories(),
+          catalogApi.searchProducts({
+            size: 12,
+            sort: "createdAt",
+            direction: "desc",
+          }),
+        ]);
+        setCategories(categoriesData);
+        setFeaturedProducts(productsData.content);
+      } catch (err) {
+        console.error("Failed to load home data:", err);
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, []);
 
-  const loadHomeData = async () => {
-    try {
-      const [categoriesData, productsData] = await Promise.all([
-        catalogApi.getCategories(),
-        catalogApi.searchProducts({
-          size: 8,
-          sort: "createdAt",
-          direction: "desc",
-        }),
-      ]);
+  const scrollY = useParallax();
 
-      setCategories(categoriesData);
-      setFeaturedProducts(productsData.content);
-    } catch (error) {
-      console.error("Failed to load home data:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
   return (
     <div className="min-h-screen bg-background">
-      {/* Hero Section */}
-      <section className="relative py-20 bg-gradient-to-br from-background via-background-secondary to-background-tertiary">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5" />
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* Sticky Assurance Bar (Cashify-like trust signals) */}
+      <AssuranceBar />
+
+      {/* Hero Section with subtle parallax overlay */}
+      <section className="home-hero">
+        <div
+          className="home-hero-overlay"
+          style={{ transform: `translateY(${scrollY * 0.08}px)` }}
+        />
+        <div className="home-container relative">
           <div className="text-center">
-            <h1 className="text-5xl md:text-6xl font-bold text-foreground font-display mb-6 leading-tight">
-              Premium Refurbished
-              <span className="block text-primary">Electronics</span>
+            <h1 className="home-hero-title reveal-up in-view">
+              Premium Refurbished{" "}
+              <span className="home-hero-accent">Electronics</span>
             </h1>
-            <p className="text-xl text-foreground-secondary mb-8 max-w-3xl mx-auto">
+            <p className="home-hero-sub reveal-up delay-1 in-view">
               Get the latest smartphones, laptops, and tablets at unbeatable
               prices. All devices come with quality guarantee and warranty.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="home-hero-ctas reveal-up delay-2 in-view">
               <Link href="/auth/register">
                 <Button size="lg" className="w-full sm:w-auto">
                   <HiShoppingBag className="w-5 h-5" />
@@ -71,214 +118,186 @@ export default function Home() {
               </Button>
             </div>
           </div>
+
+          {/* Brand strip (auto-scroll) */}
+          <BrandStrip />
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-20 bg-background">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-foreground font-display mb-4">
-              Why Choose DeviceHub?
-            </h2>
-            <p className="text-lg text-foreground-secondary">
-              We ensure every device meets our high standards of quality and
-              reliability
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="text-center p-6">
-              <div className="w-16 h-16 bg-secondary/10 rounded-xl flex items-center justify-center mx-auto mb-4">
-                <HiShieldCheck className="w-8 h-8 text-secondary" />
-              </div>
-              <h3 className="text-xl font-semibold text-foreground mb-2 font-display">
-                Quality Guaranteed
-              </h3>
-              <p className="text-foreground-muted">
-                Every device undergoes rigorous testing and comes with our
-                quality guarantee
+      {/* Feature highlights (QC, Replacement, Warranty …) */}
+      <RevealSection>
+        <section className="home-section">
+          <div className="home-container">
+            <div className="text-center mb-16">
+              <h2 className="home-section-title">Why Choose DeviceHub?</h2>
+              <p className="home-section-sub">
+                We ensure every device meets our high standards of quality and
+                reliability
               </p>
             </div>
 
-            <div className="text-center p-6">
-              <div className="w-16 h-16 bg-accent/10 rounded-xl flex items-center justify-center mx-auto mb-4">
-                <HiTruck className="w-8 h-8 text-accent" />
-              </div>
-              <h3 className="text-xl font-semibold text-foreground mb-2 font-display">
-                Free Shipping
-              </h3>
-              <p className="text-foreground-muted">
-                Free shipping on all orders over $50 with fast and secure
-                delivery
-              </p>
-            </div>
-
-            <div className="text-center p-6">
-              <div className="w-16 h-16 bg-primary/10 rounded-xl flex items-center justify-center mx-auto mb-4">
-                <HiStar className="w-8 h-8 text-primary" />
-              </div>
-              <h3 className="text-xl font-semibold text-foreground mb-2 font-display">
-                30-Day Returns
-              </h3>
-              <p className="text-foreground-muted">
-                Not satisfied? Return any device within 30 days for a full
-                refund
-              </p>
+            <div className="home-feature-grid">
+              <FeatureCard
+                icon={<HiShieldCheck className="w-8 h-8" />}
+                iconBg="rgba(5,150,105,.10)"
+                iconColor="var(--color-secondary)"
+                title="32-Point Quality Check"
+                sub="Every device is tested thoroughly for performance, battery, display & ports."
+              />
+              <FeatureCard
+                icon={<HiRefresh className="w-8 h-8" />}
+                iconBg="rgba(245,158,11,.10)"
+                iconColor="var(--color-accent)"
+                title="15-Day Replacement"
+                sub="If something’s off, we’ll replace it quickly—no long forms."
+              />
+              <FeatureCard
+                icon={<HiBadgeCheck className="w-8 h-8" />}
+                iconBg="rgba(37,99,235,.10)"
+                iconColor="var(--color-primary)"
+                title="6-Month Warranty"
+                sub="Peace of mind on all refurbished devices you buy from us."
+              />
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </RevealSection>
 
-      {/* CTA Section */}
-      <section className="py-20 bg-primary">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold text-white font-display mb-4">
-            Ready to Get Started?
-          </h2>
-          <p className="text-xl text-white/90 mb-8">
-            Join thousands of satisfied customers and find your perfect device
-            today
-          </p>
-          <Link href="/auth/register">
-            <Button
-              variant="secondary"
-              size="lg"
-              className="bg-white text-primary hover:bg-white/90"
-            >
-              Create Your Account
-            </Button>
-          </Link>
-        </div>
-      </section>
-
-      {/* Categories Section */}
-      <section className="py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold font-display text-foreground mb-4">
-              Shop by Category
-            </h2>
-            <p className="text-foreground-secondary max-w-2xl mx-auto">
-              Discover our wide range of refurbished electronics across
-              different categories
-            </p>
-          </div>
-
-          {loading ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <Card key={i} className="animate-pulse">
-                  <CardContent className="p-6 text-center">
-                    <div className="w-16 h-16 bg-background-secondary rounded-full mx-auto mb-4" />
-                    <div className="h-4 bg-background-secondary rounded mb-2" />
-                    <div className="h-3 bg-background-secondary rounded w-2/3 mx-auto" />
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
-              {categories.map((category) => (
-                <Link
-                  key={category.id}
-                  href={`/products?category=${category.slug}`}
+      {/* Horizontal Category Scroller (Cashify vibe) */}
+      <RevealSection>
+        <section className="home-section-surface">
+          <div className="home-container">
+            <div className="flex items-end justify-between mb-8">
+              <div>
+                <h2 className="home-section-title">Shop by Category</h2>
+                <p className="home-section-sub">
+                  Discover our wide range of refurbished electronics across
+                  categories
+                </p>
+              </div>
+              {!loading && (
+                <Button
+                  variant="outline"
+                  onClick={() => router.push("/products")}
                 >
-                  <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-                    <CardContent className="p-6 text-center">
-                      <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <span className="text-2xl">
-                          {getCategoryIcon(category.slug)}
-                        </span>
+                  View All <HiArrowRight className="ml-2 w-4 h-4" />
+                </Button>
+              )}
+            </div>
+
+            {loading ? (
+              <div className="cat-scroll">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="cat-pill skeleton" />
+                ))}
+              </div>
+            ) : (
+              <div className="cat-scroll">
+                {categories.map((c) => (
+                  <Link
+                    key={c.id}
+                    href={`/products?category=${c.slug}`}
+                    className="cat-pill"
+                  >
+                    <span className="cat-emoji">{getCategoryIcon(c.slug)}</span>
+                    <span className="cat-text">{c.name}</span>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+      </RevealSection>
+
+      {/* Featured grid with reveal & hover lift */}
+      <RevealSection>
+        <section className="home-section">
+          <div className="home-container">
+            <div className="flex justify-between items-center mb-12">
+              <div>
+                <h2 className="home-section-title">Featured Products</h2>
+                <p className="home-section-sub">
+                  Handpicked deals you won’t want to miss
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => router.push("/products")}
+              >
+                View All <HiArrowRight className="ml-2 w-4 h-4" />
+              </Button>
+            </div>
+
+            {loading ? (
+              <div className="home-product-grid">
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <Card key={i} className="home-skel-card">
+                    <CardContent className="p-0">
+                      <div className="home-skel-img" />
+                      <div className="p-4">
+                        <div className="home-skel-line mb-2" />
+                        <div className="home-skel-line w-2/3 mb-4" />
+                        <div className="h-6 bg-background-secondary rounded w-1/2" />
                       </div>
-                      <h3 className="font-semibold text-foreground mb-1">
-                        {category.name}
-                      </h3>
-                      <p className="text-sm text-foreground-secondary">
-                        View Collection
-                      </p>
                     </CardContent>
                   </Card>
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* Featured Products */}
-      <section className="py-16 bg-surface">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center mb-12">
-            <div>
-              <h2 className="text-3xl font-bold font-display text-foreground mb-2">
-                Featured Products
-              </h2>
-              <p className="text-foreground-secondary">
-                Handpicked deals you won't want to miss
-              </p>
-            </div>
-            <Button variant="outline" onClick={() => router.push("/products")}>
-              View All
-              <HiArrowRight className="ml-2 w-4 h-4" />
-            </Button>
+                ))}
+              </div>
+            ) : (
+              <div className="home-product-grid">
+                {featuredProducts.map((p) => (
+                  <div key={p.id} className="reveal-up">
+                    <ProductCard product={p} />
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
+        </section>
+      </RevealSection>
 
-          {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <Card key={i} className="animate-pulse">
-                  <CardContent className="p-0">
-                    <div className="aspect-square bg-background-secondary rounded-t-lg" />
-                    <div className="p-4">
-                      <div className="h-4 bg-background-secondary rounded mb-2" />
-                      <div className="h-4 bg-background-secondary rounded w-2/3 mb-4" />
-                      <div className="h-6 bg-background-secondary rounded w-1/2" />
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {featuredProducts.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* Newsletter Section */}
-      <section className="py-16 bg-primary text-white">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold font-display mb-4">
-            Stay Updated with Latest Deals
-          </h2>
-          <p className="text-white font-bold mb-8">
-            Subscribe to our newsletter and be the first to know about new
-            arrivals and exclusive offers
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
-            <input
-              type="email"
-              placeholder="Enter your email"
-              className="flex-1 px-4 py-3 rounded-lg bg-white text-black placeholder-gray-500 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-            <Button className="bg-white text-primary hover:bg-gray-100">
-              Subscribe
-            </Button>
+      {/* KPI counters (trust & scale) */}
+      <RevealSection>
+        <section className="kpi-strip">
+          <div className="home-container kpi-grid">
+            <KPI label="Happy Customers" valueTo={200000} suffix="+" />
+            <KPI label="Devices Refurbished" valueTo={500000} suffix="+" />
+            <KPI label="Cities Covered" valueTo={120} />
+            <KPI label="Avg. Rating" valueTo={4.7} decimals={1} />
           </div>
-        </div>
-      </section>
+        </section>
+      </RevealSection>
+
+      {/* Newsletter CTA */}
+      <RevealSection>
+        <section className="home-newsletter">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h2 className="text-3xl font-bold font-display mb-4">
+              Stay Updated with Latest Deals
+            </h2>
+            <p className="text-white font-bold mb-8">
+              Subscribe to our newsletter and be the first to know about new
+              arrivals and exclusive offers
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
+              <input
+                type="email"
+                placeholder="Enter your email"
+                className="flex-1 px-4 py-3 rounded-lg bg-white text-black placeholder-gray-500 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+              <Button className="bg-white text-primary hover:bg-gray-100">
+                Subscribe
+              </Button>
+            </div>
+          </div>
+        </section>
+      </RevealSection>
 
       {/* Footer */}
-      <footer className="bg-foreground text-white py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Grid with logo spanning 2 columns */}
-          <div className="grid grid-cols-1 md:grid-cols-6 gap-8 items-start">
-            {/* Logo + description (span 2 cols) */}
+      <footer className="home-footer">
+        <div className="home-container">
+          <div className="home-footer-grid">
             <div className="md:col-span-2">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
@@ -294,86 +313,24 @@ export default function Home() {
               </p>
             </div>
 
-            {/* Company */}
-            <div>
-              <h3 className="font-semibold mb-4">Company</h3>
-              <ul className="space-y-2 text-white/70">
-                <li>
-                  <a href="#" className="hover:text-white">
-                    About Us
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-white">
-                    Careers
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-white">
-                    Press
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-white">
-                    Contact
-                  </a>
-                </li>
-              </ul>
-            </div>
-
-            {/* Support */}
-            <div>
-              <h3 className="font-semibold mb-4">Support</h3>
-              <ul className="space-y-2 text-white/70">
-                <li>
-                  <a href="#" className="hover:text-white">
-                    Help Center
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-white">
-                    Returns
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-white">
-                    Warranty
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-white">
-                    Shipping
-                  </a>
-                </li>
-              </ul>
-            </div>
-
-            {/* Legal */}
-            <div>
-              <h3 className="font-semibold mb-4">Legal</h3>
-              <ul className="space-y-2 text-white/70">
-                <li>
-                  <a href="/terms" className="hover:text-white">
-                    Terms of Service
-                  </a>
-                </li>
-                <li>
-                  <a href="/privacy" className="hover:text-white">
-                    Privacy Policy
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-white">
-                    Cookie Policy
-                  </a>
-                </li>
-              </ul>
-            </div>
+            <FooterCol
+              title="Company"
+              items={["About Us", "Careers", "Press", "Contact"]}
+            />
+            <FooterCol
+              title="Support"
+              items={["Help Center", "Returns", "Warranty", "Shipping"]}
+            />
+            <FooterCol
+              title="Legal"
+              items={["Terms of Service", "Privacy Policy", "Cookie Policy"]}
+            />
           </div>
 
-          {/* Bottom copyright */}
-          <div className="border-t border-white/20 mt-8 pt-8 text-center text-white/70">
-            <p>&copy; 2024 DeviceHub. All rights reserved.</p>
+          <div className="home-footer-bottom">
+            <p>
+              &copy; {new Date().getFullYear()} DeviceHub. All rights reserved.
+            </p>
           </div>
         </div>
       </footer>
@@ -381,7 +338,160 @@ export default function Home() {
   );
 }
 
-// Helper function for category icons
+/* ---------- Subcomponents ---------- */
+
+function AssuranceBar() {
+  return (
+    <div className="assurance-bar">
+      <div className="home-container assurance-flex">
+        <div className="assurance-item">
+          <HiShieldCheck className="assurance-ic" />
+          <span>Cashify-style QC</span>
+        </div>
+        <div className="assurance-item">
+          <HiRefresh className="assurance-ic" />
+          <span>15-Day Replacement</span>
+        </div>
+        <div className="assurance-item">
+          <HiBadgeCheck className="assurance-ic" />
+          <span>6-Month Warranty</span>
+        </div>
+        <div className="assurance-item">
+          <HiCreditCard className="assurance-ic" />
+          <span>No-Cost EMI*</span>
+        </div>
+        <div className="assurance-item">
+          <HiClock className="assurance-ic" />
+          <span>Fast Delivery</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BrandStrip() {
+  return (
+    <div className="brand-strip">
+      <div className="brand-marquee">
+        <div className="brand-track">
+          {[
+            "Apple",
+            "Dell",
+            "HP",
+            "Lenovo",
+            "ASUS",
+            "Acer",
+            "Samsung",
+            "Microsoft",
+          ].map((b, i) => (
+            <div key={i} className="brand-pill">
+              {b}
+            </div>
+          ))}
+          {[
+            "Apple",
+            "Dell",
+            "HP",
+            "Lenovo",
+            "ASUS",
+            "Acer",
+            "Samsung",
+            "Microsoft",
+          ].map((b, i) => (
+            <div key={`dup-${i}`} className="brand-pill">
+              {b}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FeatureCard({
+  icon,
+  iconBg,
+  iconColor,
+  title,
+  sub,
+}: {
+  icon: React.ReactNode;
+  iconBg: string;
+  iconColor: string;
+  title: string;
+  sub: string;
+}) {
+  return (
+    <div className="feat-card reveal-up">
+      <div className="feat-ic" style={{ background: iconBg, color: iconColor }}>
+        {icon}
+      </div>
+      <h3 className="feat-title">{title}</h3>
+      <p className="feat-sub">{sub}</p>
+    </div>
+  );
+}
+
+function FooterCol({ title, items }: { title: string; items: string[] }) {
+  return (
+    <div>
+      <h3 className="font-semibold mb-4">{title}</h3>
+      <ul className="space-y-2 text-white/70">
+        {items.map((t) => (
+          <li key={t}>
+            <a href="#" className="hover:text-white">
+              {t}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function KPI({
+  label,
+  valueTo,
+  suffix = "",
+  decimals = 0,
+}: {
+  label: string;
+  valueTo: number;
+  suffix?: string;
+  decimals?: number;
+}) {
+  const { ref, inView } = useInView<HTMLDivElement>();
+  const [value, setValue] = useState(0);
+
+  useEffect(() => {
+    if (!inView) return;
+    const duration = 900;
+    const start = performance.now();
+    const from = 0;
+    const to = valueTo;
+    const step = (t: number) => {
+      const p = Math.min(1, (t - start) / duration);
+      const eased = 1 - Math.pow(1 - p, 3);
+      const current = from + (to - from) * eased;
+      setValue(current);
+      if (p < 1) requestAnimationFrame(step);
+    };
+    const raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [inView, valueTo]);
+
+  return (
+    <div ref={ref} className="kpi-item">
+      <div className="kpi-value">
+        {value.toFixed(decimals)}
+        {suffix}
+      </div>
+      <div className="kpi-label">{label}</div>
+    </div>
+  );
+}
+
+// Category Icons
 function getCategoryIcon(slug: string) {
   const icons: Record<string, string> = {
     laptops: "💻",
@@ -393,26 +503,15 @@ function getCategoryIcon(slug: string) {
   return icons[slug] || "📦";
 }
 
-// Product Card Component
 function ProductCard({ product }: { product: Product }) {
   const getConditionBadge = (grade: string) => {
-    const colors = {
-      A: "bg-secondary/10 text-secondary",
-      B: "bg-warning/10 text-warning",
-      C: "bg-accent/10 text-accent",
+    const colors: Record<string, React.CSSProperties> = {
+      A: { background: "rgba(5,150,105,.10)", color: "var(--color-secondary)" },
+      B: { background: "rgba(245,158,11,.10)", color: "var(--color-warning)" },
+      C: { background: "rgba(245,158,11,.10)", color: "var(--color-accent)" },
     };
-    const labels = {
-      A: "Excellent",
-      B: "Good",
-      C: "Fair",
-    };
-
     return (
-      <span
-        className={`px-2 py-1 rounded-full text-xs font-medium ${
-          colors[grade as keyof typeof colors]
-        }`}
-      >
+      <span className="badge" style={colors[grade] || {}}>
         Grade {grade}
       </span>
     );
@@ -426,15 +525,15 @@ function ProductCard({ product }: { product: Product }) {
   const price = getLowestPrice();
 
   return (
-    <Link href={`/products/${product.slug}`}>
-      <Card className="hover:shadow-lg transition-shadow duration-300 cursor-pointer">
+    <Link href={`/products/${product.slug}`} className="prod-card">
+      <Card className="hover:shadow-lg cursor-pointer">
         <CardContent className="p-0">
-          <div className="aspect-square bg-background-secondary rounded-t-lg flex items-center justify-center">
+          <div className="prod-img">
             {product.images?.length ? (
               <img
                 src={product.images[0].url}
                 alt={product.title}
-                className="w-full h-full object-cover rounded-t-lg"
+                className="prod-img-el"
               />
             ) : (
               <div className="text-foreground-muted text-6xl">📱</div>
@@ -445,7 +544,6 @@ function ProductCard({ product }: { product: Product }) {
             <div className="mb-2">
               {getConditionBadge(product.conditionGrade)}
             </div>
-
             <h3 className="text-sm font-semibold text-foreground mb-2 line-clamp-2">
               {product.title}
             </h3>
@@ -475,5 +573,15 @@ function ProductCard({ product }: { product: Product }) {
         </CardContent>
       </Card>
     </Link>
+  );
+}
+
+/* ---------- RevealSection wrapper (applies stagger via CSS) ---------- */
+function RevealSection({ children }: { children: React.ReactNode }) {
+  const { ref, inView } = useInView<HTMLDivElement>();
+  return (
+    <div ref={ref} className={`reveal-wrap ${inView ? "in-view" : ""}`}>
+      {children}
+    </div>
   );
 }
