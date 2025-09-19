@@ -1,0 +1,12 @@
+export { HeroSection } from "./HeroSection";
+export { BrandStrip } from "./BrandStrip";
+export { BannerCarousel } from "./BannerCarousel";
+export { FeatureSection } from "./FeatureSection";
+export { FeatureCard } from "./FeatureCard";
+export { CategorySection } from "./CategorySection";
+export { FeaturedProductsSection } from "./FeaturedProductsSection";
+export { ProductCard } from "./ProductCard";
+export { KPISection } from "./KPISection";
+export { NewsletterSection } from "./NewsletterSection";
+export { FooterSection } from "./FooterSection";
+export { RevealSection } from "./RevealSection";
