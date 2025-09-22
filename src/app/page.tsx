@@ -7,6 +7,7 @@ import {
   HeroSection,
   BannerCarousel,
   FeatureSection,
+  ShopByBrandSection,
   CategorySection,
   FeaturedProductsSection,
   KPISection,
@@ -59,6 +60,7 @@ export default function Home() {
       <HeroSection scrollY={scrollY} />
       <BannerCarousel />
       <FeatureSection />
+      <ShopByBrandSection />
       <CategorySection categories={categories} loading={loading} />
       <FeaturedProductsSection
         featuredProducts={featuredProducts}
