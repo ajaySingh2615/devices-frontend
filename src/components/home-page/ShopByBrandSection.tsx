@@ -1,30 +1,41 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { RevealSection } from "@/components/home-page/RevealSection";
 
 export function ShopByBrandSection() {
+  const router = useRouter();
+
   const brands = [
     {
       id: 1,
       name: "Apple",
+      slug: "apple",
       image: "/shop_by_brand/apple.webp",
     },
     {
       id: 2,
       name: "Dell",
+      slug: "dell",
       image: "/shop_by_brand/dell.webp",
     },
     {
       id: 3,
       name: "HP",
+      slug: "hp",
       image: "/shop_by_brand/hp.webp",
     },
     {
       id: 4,
       name: "Lenovo",
+      slug: "lenovo",
       image: "/shop_by_brand/lenovo.webp",
     },
   ];
+
+  const handleBrandClick = (brandSlug: string) => {
+    router.push(`/products?brand=${brandSlug}`);
+  };
 
   return (
     <RevealSection>
@@ -40,7 +51,8 @@ export function ShopByBrandSection() {
             {brands.map((brand) => (
               <div
                 key={brand.id}
-                className="rounded-xl overflow-hidden hover:shadow-lg transition-shadow duration-300"
+                className="rounded-xl overflow-hidden hover:shadow-lg transition-shadow duration-300 cursor-pointer"
+                onClick={() => handleBrandClick(brand.slug)}
               >
                 <img
                   src={brand.image}
