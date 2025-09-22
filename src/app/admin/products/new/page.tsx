@@ -48,6 +48,7 @@ interface ProductFormData {
   description: string;
   conditionGrade: ConditionGrade;
   warrantyMonths: number;
+  isBestseller: boolean;
 }
 
 interface VariantFormData {
@@ -101,6 +102,7 @@ export default function NewProductPage() {
     description: "",
     conditionGrade: "A",
     warrantyMonths: 6,
+    isBestseller: false,
   });
 
   // If user edits the slug field manually, don’t overwrite from title
@@ -453,8 +455,8 @@ export default function NewProductPage() {
               />
             </div>
 
-            {/* Grade + Warranty */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Grade + Warranty + Bestseller */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-2">
                   Condition Grade *
@@ -495,6 +497,22 @@ export default function NewProductPage() {
                     })
                   }
                 />
+              </div>
+              <div className="flex items-center gap-2 pt-7">
+                <input
+                  id="isBestseller"
+                  type="checkbox"
+                  checked={productData.isBestseller}
+                  onChange={(e) =>
+                    setProductData({
+                      ...productData,
+                      isBestseller: e.target.checked,
+                    })
+                  }
+                />
+                <label htmlFor="isBestseller" className="text-sm font-medium">
+                  Mark as Bestseller
+                </label>
               </div>
             </div>
 

@@ -637,6 +637,7 @@ export interface Product {
   conditionGrade: "A" | "B" | "C";
   warrantyMonths: number;
   isActive: boolean;
+  isBestseller?: boolean;
   createdAt: string;
   category?: Category;
   brand?: Brand;
@@ -708,6 +709,7 @@ export interface ProductSearchParams {
   processorVendor?: string;
   processorSeries?: string;
   processorGeneration?: string;
+  bestseller?: boolean;
 }
 
 // Admin Types
@@ -754,6 +756,7 @@ export interface CreateProductRequest {
   description?: string;
   conditionGrade: ConditionGrade;
   warrantyMonths?: number;
+  isBestseller?: boolean;
 }
 
 export interface UpdateProductRequest {
@@ -765,6 +768,7 @@ export interface UpdateProductRequest {
   conditionGrade?: ConditionGrade;
   warrantyMonths?: number;
   isActive?: boolean;
+  isBestseller?: boolean;
 }
 
 export interface CreateVariantRequest {

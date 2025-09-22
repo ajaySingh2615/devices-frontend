@@ -42,6 +42,7 @@ interface ProductFormData {
   conditionGrade: ConditionGrade;
   warrantyMonths: number;
   isActive: boolean;
+  isBestseller: boolean;
 }
 
 interface VariantFormData {
@@ -85,6 +86,7 @@ export default function EditProductPage() {
     conditionGrade: "A",
     warrantyMonths: 6,
     isActive: true,
+    isBestseller: false,
   });
 
   useEffect(() => {
@@ -102,6 +104,7 @@ export default function EditProductPage() {
         conditionGrade: product.conditionGrade,
         warrantyMonths: product.warrantyMonths,
         isActive: product.isActive,
+        isBestseller: (product as any).isBestseller || false,
       });
 
       // Load variants if available
@@ -238,6 +241,7 @@ export default function EditProductPage() {
         conditionGrade: productData.conditionGrade,
         warrantyMonths: productData.warrantyMonths,
         isActive: productData.isActive,
+        isBestseller: productData.isBestseller,
       });
 
       // Update existing variants and create new ones
@@ -455,7 +459,7 @@ export default function EditProductPage() {
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-2">
                   Condition Grade *
@@ -512,6 +516,25 @@ export default function EditProductPage() {
                   <option value="active">Active</option>
                   <option value="inactive">Inactive</option>
                 </select>
+              </div>
+              <div className="flex items-center gap-2 pt-7">
+                <input
+                  id="edit-isBestseller"
+                  type="checkbox"
+                  checked={productData.isBestseller}
+                  onChange={(e) =>
+                    setProductData({
+                      ...productData,
+                      isBestseller: e.target.checked,
+                    })
+                  }
+                />
+                <label
+                  htmlFor="edit-isBestseller"
+                  className="text-sm font-medium"
+                >
+                  Bestseller
+                </label>
               </div>
             </div>
           </CardContent>
@@ -785,6 +808,25 @@ export default function EditProductPage() {
                       <option value="active">Active</option>
                       <option value="inactive">Inactive</option>
                     </select>
+                  </div>
+                  <div className="flex items-center gap-2 pt-7">
+                    <input
+                      id="isBestseller"
+                      type="checkbox"
+                      checked={productData.isBestseller}
+                      onChange={(e) =>
+                        setProductData({
+                          ...productData,
+                          isBestseller: e.target.checked,
+                        })
+                      }
+                    />
+                    <label
+                      htmlFor="isBestseller"
+                      className="text-sm font-medium"
+                    >
+                      Bestseller
+                    </label>
                   </div>
                 </div>
 

@@ -10,6 +10,7 @@ import {
   ShopByBrandSection,
   ShopByProcessorSection,
   CompanyLogosSection,
+  BestsellersSection,
   CategorySection,
   FeaturedProductsSection,
   KPISection,
@@ -65,6 +66,7 @@ export default function Home() {
       <ShopByBrandSection />
       <CompanyLogosSection />
       <ShopByProcessorSection />
+      <BestsellersSection />
       <CategorySection categories={categories} loading={loading} />
       <FeaturedProductsSection
         featuredProducts={featuredProducts}
