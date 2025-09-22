@@ -12,3 +12,4 @@ export { NewsletterSection } from "./NewsletterSection";
 export { FooterSection } from "./FooterSection";
 export { RevealSection } from "./RevealSection";
 export { CompanyLogosSection } from "./CompanyLogosSection";
+export { ShopByProcessorSection } from "./ShopByProcessorSection";

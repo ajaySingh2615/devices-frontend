@@ -39,6 +39,9 @@ export default function ProductsPage() {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedBrand, setSelectedBrand] = useState("");
   const [selectedCondition, setSelectedCondition] = useState("");
+  const [processorVendor, setProcessorVendor] = useState("");
+  const [processorSeries, setProcessorSeries] = useState("");
+  const [processorGeneration, setProcessorGeneration] = useState("");
   const [priceRange, setPriceRange] = useState({ min: "", max: "" });
   const [sort, setSort] = useState<
     "relevance" | "newest" | "price_asc" | "price_desc"
@@ -58,6 +61,9 @@ export default function ProductsPage() {
     setSelectedCategory(searchParams.get("category") || "");
     setSelectedBrand(searchParams.get("brand") || "");
     setSelectedCondition(searchParams.get("condition") || "");
+    setProcessorVendor(searchParams.get("processorVendor") || "");
+    setProcessorSeries(searchParams.get("processorSeries") || "");
+    setProcessorGeneration(searchParams.get("processorGeneration") || "");
     setPriceRange({
       min: searchParams.get("minPrice") || "",
       max: searchParams.get("maxPrice") || "",
@@ -107,6 +113,10 @@ export default function ProductsPage() {
         category: searchParams.get("category") || undefined,
         brand: searchParams.get("brand") || undefined,
         condition: searchParams.get("condition") || undefined,
+        processorVendor: searchParams.get("processorVendor") || undefined,
+        processorSeries: searchParams.get("processorSeries") || undefined,
+        processorGeneration:
+          searchParams.get("processorGeneration") || undefined,
         minPrice: searchParams.get("minPrice")
           ? parseFloat(searchParams.get("minPrice")!)
           : undefined,
@@ -186,6 +196,15 @@ export default function ProductsPage() {
     (priceRange.min || priceRange.max) && {
       key: "price",
       label: `₹${priceRange.min || "0"}–₹${priceRange.max || "∞"}`,
+    },
+    processorVendor && {
+      key: "processorVendor",
+      label: processorVendor.toUpperCase(),
+    },
+    processorSeries && { key: "processorSeries", label: processorSeries },
+    processorGeneration && {
+      key: "processorGeneration",
+      label: processorGeneration,
     },
   ].filter(Boolean) as { key: string; label: string }[];
 
@@ -304,6 +323,21 @@ export default function ProductsPage() {
                 setSelectedCondition={(v) => {
                   setSelectedCondition(v);
                   updateFilters({ condition: v, q: "" });
+                }}
+                processorVendor={processorVendor}
+                setProcessorVendor={(v) => {
+                  setProcessorVendor(v);
+                  updateFilters({ processorVendor: v, q: "" });
+                }}
+                processorSeries={processorSeries}
+                setProcessorSeries={(v) => {
+                  setProcessorSeries(v);
+                  updateFilters({ processorSeries: v, q: "" });
+                }}
+                processorGeneration={processorGeneration}
+                setProcessorGeneration={(v) => {
+                  setProcessorGeneration(v);
+                  updateFilters({ processorGeneration: v, q: "" });
                 }}
                 priceRange={priceRange}
                 setPriceRange={setPriceRange}
@@ -523,6 +557,13 @@ function FiltersCard(props: {
   setSelectedBrand: (v: string) => void;
   selectedCondition: string;
   setSelectedCondition: (v: string) => void;
+  // processor filters
+  processorVendor?: string;
+  setProcessorVendor?: (v: string) => void;
+  processorSeries?: string;
+  setProcessorSeries?: (v: string) => void;
+  processorGeneration?: string;
+  setProcessorGeneration?: (v: string) => void;
   priceRange: { min: string; max: string };
   setPriceRange: (v: { min: string; max: string }) => void;
   applyPrice: () => void;
@@ -537,6 +578,12 @@ function FiltersCard(props: {
     setSelectedBrand,
     selectedCondition,
     setSelectedCondition,
+    processorVendor = "",
+    setProcessorVendor = () => {},
+    processorSeries = "",
+    setProcessorSeries = () => {},
+    processorGeneration = "",
+    setProcessorGeneration = () => {},
     priceRange,
     setPriceRange,
     applyPrice,
@@ -605,6 +652,44 @@ function FiltersCard(props: {
               <option value="B">Grade B (Good)</option>
               <option value="C">Grade C (Fair)</option>
             </select>
+          </div>
+
+          {/* Processor */}
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-foreground-secondary">
+              Processor
+            </label>
+            <select
+              value={processorVendor}
+              onChange={(e) => setProcessorVendor(e.target.value)}
+              className="w-full p-2.5 rounded-lg border border-border bg-surface mb-2"
+            >
+              <option value="">Any Vendor</option>
+              <option value="intel">Intel</option>
+              <option value="amd">AMD</option>
+              <option value="apple">Apple</option>
+            </select>
+            <Input
+              placeholder="Series (e.g., i5, Ryzen 5, M1)"
+              value={processorSeries}
+              onChange={(e) => setProcessorSeries(e.target.value)}
+            />
+            <Input
+              placeholder="Generation (e.g., 12th Gen)"
+              value={processorGeneration}
+              onChange={(e) => setProcessorGeneration(e.target.value)}
+              className="mt-2"
+            />
+            {!compact && (
+              <Button
+                onClick={
+                  () =>
+                    applyPrice() /* reusing Apply button below for consistency */
+                }
+                variant="ghost"
+                className="w-full mt-1"
+              ></Button>
+            )}
           </div>
 
           {/* Price */}

@@ -56,6 +56,10 @@ interface VariantFormData {
   color: string;
   storageGb: number | null;
   ramGb: number | null;
+  cpuVendor: string;
+  cpuSeries: string;
+  cpuGeneration: string;
+  cpuModel: string;
   priceMrp: number;
   priceSale: number;
   taxRate: number;
@@ -109,6 +113,10 @@ export default function NewProductPage() {
       color: "",
       storageGb: null,
       ramGb: null,
+      cpuVendor: "",
+      cpuSeries: "",
+      cpuGeneration: "",
+      cpuModel: "",
       priceMrp: 0,
       priceSale: 0,
       taxRate: 18,
@@ -167,6 +175,10 @@ export default function NewProductPage() {
         color: "",
         storageGb: null,
         ramGb: null,
+        cpuVendor: "",
+        cpuSeries: "",
+        cpuGeneration: "",
+        cpuModel: "",
         priceMrp: 0,
         priceSale: 0,
         taxRate: 18,
@@ -263,6 +275,10 @@ export default function NewProductPage() {
           color: v.color,
           storageGb: v.storageGb || undefined,
           ramGb: v.ramGb || undefined,
+          cpuVendor: v.cpuVendor || undefined,
+          cpuSeries: v.cpuSeries || undefined,
+          cpuGeneration: v.cpuGeneration || undefined,
+          cpuModel: v.cpuModel || undefined,
           priceMrp: v.priceMrp,
           priceSale: v.priceSale,
           taxRate: v.taxRate,
@@ -576,6 +592,47 @@ export default function NewProductPage() {
                       placeholder="Manufacturer part number"
                       value={v.mpn}
                       onChange={(val) => updateVariant(index, "mpn", val)}
+                    />
+                  </div>
+
+                  {/* CPU Row */}
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-2">
+                        CPU Vendor
+                      </label>
+                      <select
+                        value={v.cpuVendor}
+                        onChange={(e) =>
+                          updateVariant(index, "cpuVendor", e.target.value)
+                        }
+                        className="w-full px-3 py-2 rounded-md border border-border bg-background"
+                      >
+                        <option value="">—</option>
+                        <option value="intel">Intel</option>
+                        <option value="amd">AMD</option>
+                        <option value="apple">Apple</option>
+                      </select>
+                    </div>
+                    <Field
+                      label="CPU Series"
+                      placeholder="i5, Ryzen 5, M1"
+                      value={v.cpuSeries}
+                      onChange={(val) => updateVariant(index, "cpuSeries", val)}
+                    />
+                    <Field
+                      label="CPU Generation"
+                      placeholder="12th Gen"
+                      value={v.cpuGeneration}
+                      onChange={(val) =>
+                        updateVariant(index, "cpuGeneration", val)
+                      }
+                    />
+                    <Field
+                      label="CPU Model"
+                      placeholder="i7-1165G7 / 5600U / M2"
+                      value={v.cpuModel}
+                      onChange={(val) => updateVariant(index, "cpuModel", val)}
                     />
                   </div>
 

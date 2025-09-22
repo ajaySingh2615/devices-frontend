@@ -8,6 +8,7 @@ import {
   BannerCarousel,
   FeatureSection,
   ShopByBrandSection,
+  ShopByProcessorSection,
   CompanyLogosSection,
   CategorySection,
   FeaturedProductsSection,
@@ -63,6 +64,7 @@ export default function Home() {
       <FeatureSection />
       <ShopByBrandSection />
       <CompanyLogosSection />
+      <ShopByProcessorSection />
       <CategorySection categories={categories} loading={loading} />
       <FeaturedProductsSection
         featuredProducts={featuredProducts}

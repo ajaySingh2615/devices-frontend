@@ -659,6 +659,11 @@ export interface ProductVariant {
   isActive: boolean;
   createdAt: string;
   inventory?: Inventory;
+  // CPU info
+  cpuVendor?: string;
+  cpuSeries?: string;
+  cpuGeneration?: string;
+  cpuModel?: string;
 }
 
 export interface Inventory {
@@ -700,6 +705,9 @@ export interface ProductSearchParams {
   condition?: string;
   minPrice?: number;
   maxPrice?: number;
+  processorVendor?: string;
+  processorSeries?: string;
+  processorGeneration?: string;
 }
 
 // Admin Types
@@ -765,6 +773,10 @@ export interface CreateVariantRequest {
   color?: string;
   storageGb?: number;
   ramGb?: number;
+  cpuVendor?: string;
+  cpuSeries?: string;
+  cpuGeneration?: string;
+  cpuModel?: string;
   priceMrp: number;
   priceSale: number;
   taxRate?: number;
@@ -778,6 +790,10 @@ export interface UpdateVariantRequest {
   color?: string;
   storageGb?: number;
   ramGb?: number;
+  cpuVendor?: string;
+  cpuSeries?: string;
+  cpuGeneration?: string;
+  cpuModel?: string;
   priceMrp?: number;
   priceSale?: number;
   taxRate?: number;

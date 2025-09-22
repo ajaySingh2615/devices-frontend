@@ -51,6 +51,10 @@ interface VariantFormData {
   color: string;
   storageGb: number | null;
   ramGb: number | null;
+  cpuVendor: string;
+  cpuSeries: string;
+  cpuGeneration: string;
+  cpuModel: string;
   priceMrp: number;
   priceSale: number;
   taxRate: number;
@@ -109,6 +113,10 @@ export default function EditProductPage() {
           color: variant.color || "",
           storageGb: variant.storageGb ?? null,
           ramGb: variant.ramGb ?? null,
+          cpuVendor: (variant.cpuVendor || "").toLowerCase(),
+          cpuSeries: variant.cpuSeries || "",
+          cpuGeneration: variant.cpuGeneration || "",
+          cpuModel: variant.cpuModel || "",
           priceMrp: variant.priceMrp,
           priceSale: variant.priceSale,
           taxRate: variant.taxRate,
@@ -127,6 +135,10 @@ export default function EditProductPage() {
             color: "",
             storageGb: null,
             ramGb: null,
+            cpuVendor: "",
+            cpuSeries: "",
+            cpuGeneration: "",
+            cpuModel: "",
             priceMrp: 0,
             priceSale: 0,
             taxRate: 18,
@@ -134,7 +146,7 @@ export default function EditProductPage() {
             quantity: 0,
             safetyStock: 5,
             isActive: true,
-          },
+          } as VariantFormData,
         ]);
       }
     }
@@ -169,6 +181,10 @@ export default function EditProductPage() {
         color: "",
         storageGb: null,
         ramGb: null,
+        cpuVendor: "",
+        cpuSeries: "",
+        cpuGeneration: "",
+        cpuModel: "",
         priceMrp: 0,
         priceSale: 0,
         taxRate: 18,
@@ -176,7 +192,7 @@ export default function EditProductPage() {
         quantity: 0,
         safetyStock: 5,
         isActive: true,
-      },
+      } as VariantFormData,
     ]);
   };
 
@@ -234,6 +250,10 @@ export default function EditProductPage() {
             color: variantData.color,
             storageGb: variantData.storageGb ?? undefined,
             ramGb: variantData.ramGb ?? undefined,
+            cpuVendor: variantData.cpuVendor || undefined,
+            cpuSeries: variantData.cpuSeries || undefined,
+            cpuGeneration: variantData.cpuGeneration || undefined,
+            cpuModel: variantData.cpuModel || undefined,
             priceMrp: variantData.priceMrp,
             priceSale: variantData.priceSale,
             taxRate: variantData.taxRate,
@@ -258,6 +278,10 @@ export default function EditProductPage() {
             color: variantData.color,
             storageGb: variantData.storageGb ?? undefined,
             ramGb: variantData.ramGb ?? undefined,
+            cpuVendor: variantData.cpuVendor || undefined,
+            cpuSeries: variantData.cpuSeries || undefined,
+            cpuGeneration: variantData.cpuGeneration || undefined,
+            cpuModel: variantData.cpuModel || undefined,
             priceMrp: variantData.priceMrp,
             priceSale: variantData.priceSale,
             taxRate: variantData.taxRate,
@@ -619,6 +643,66 @@ export default function EditProductPage() {
                         )
                       }
                       placeholder="Weight in grams"
+                    />
+                  </div>
+                </div>
+
+                {/* CPU Row */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      CPU Vendor
+                    </label>
+                    <select
+                      value={variant.cpuVendor}
+                      onChange={(e) =>
+                        updateVariant(index, "cpuVendor", e.target.value)
+                      }
+                      className="w-full p-3 border border-border rounded-lg focus:ring-2 focus:ring-primary bg-surface"
+                    >
+                      <option value="">—</option>
+                      <option value="intel">Intel</option>
+                      <option value="amd">AMD</option>
+                      <option value="apple">Apple</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      CPU Series
+                    </label>
+                    <Input
+                      type="text"
+                      value={variant.cpuSeries}
+                      onChange={(e) =>
+                        updateVariant(index, "cpuSeries", e.target.value)
+                      }
+                      placeholder="i5, Ryzen 5, M1"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      CPU Generation
+                    </label>
+                    <Input
+                      type="text"
+                      value={variant.cpuGeneration}
+                      onChange={(e) =>
+                        updateVariant(index, "cpuGeneration", e.target.value)
+                      }
+                      placeholder="12th Gen"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      CPU Model
+                    </label>
+                    <Input
+                      type="text"
+                      value={variant.cpuModel}
+                      onChange={(e) =>
+                        updateVariant(index, "cpuModel", e.target.value)
+                      }
+                      placeholder="i7-1165G7 / 5600U / M2"
                     />
                   </div>
                 </div>
