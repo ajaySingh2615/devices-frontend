@@ -8,6 +8,7 @@ import {
   BannerCarousel,
   FeatureSection,
   ShopByBrandSection,
+  CompanyLogosSection,
   CategorySection,
   FeaturedProductsSection,
   KPISection,
@@ -61,6 +62,7 @@ export default function Home() {
       <BannerCarousel />
       <FeatureSection />
       <ShopByBrandSection />
+      <CompanyLogosSection />
       <CategorySection categories={categories} loading={loading} />
       <FeaturedProductsSection
         featuredProducts={featuredProducts}

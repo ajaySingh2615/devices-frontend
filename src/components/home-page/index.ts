@@ -11,3 +11,4 @@ export { KPISection } from "./KPISection";
 export { NewsletterSection } from "./NewsletterSection";
 export { FooterSection } from "./FooterSection";
 export { RevealSection } from "./RevealSection";
+export { CompanyLogosSection } from "./CompanyLogosSection";
