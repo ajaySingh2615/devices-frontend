@@ -98,19 +98,17 @@ export function BestsellersSection() {
             >
               <div className="flex gap-3 min-w-max px-1">
                 {data.content.map((p) => {
-                  const prices = (p.variants || []).map((v) => ({
-                    sale: v.priceSale,
-                    mrp: v.priceMrp || v.priceSale,
-                  }));
-                  const best = prices.length
-                    ? prices.sort((a, b) => a.sale - b.sale)[0]
+                  const variants = p.variants || [];
+                  const bestVariant = variants.length
+                    ? [...variants].sort((a, b) => a.priceSale - b.priceSale)[0]
                     : undefined;
-                  const price = best?.sale;
-                  const mrp = best?.mrp;
+                  const price = bestVariant?.priceSale;
+                  const mrp = bestVariant?.priceMrp || bestVariant?.priceSale;
                   const discount =
                     mrp && price && mrp > price
                       ? Math.round(((mrp - price) / mrp) * 100)
                       : 0;
+                  const available = bestVariant?.inventory?.available;
 
                   return (
                     <Card
@@ -144,6 +142,21 @@ export function BestsellersSection() {
                                   }}
                                 >
                                   ₹{(mrp - price).toLocaleString("en-IN")} OFF
+                                </span>
+                              )}
+                            {typeof available === "number" &&
+                              available >= 0 && (
+                                <span
+                                  className="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-medium ml-2"
+                                  style={{
+                                    background:
+                                      available <= 5 ? "#FEF2F2" : "#F3F4F6",
+                                    color:
+                                      available <= 5 ? "#B91C1C" : "#374151",
+                                    border: "1px solid rgba(0,0,0,0.05)",
+                                  }}
+                                >
+                                  {available} left
                                 </span>
                               )}
                             <h3 className="text-[13px] font-semibold leading-5 line-clamp-2">
