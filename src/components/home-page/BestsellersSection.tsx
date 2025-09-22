@@ -6,6 +6,7 @@ import { RevealSection } from "@/components/home-page/RevealSection";
 import { catalogApi, Product, PageResponse } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import ProductRating from "@/components/rating/ProductRating";
 
 export function BestsellersSection() {
   const [data, setData] = useState<PageResponse<Product> | null>(null);
@@ -109,14 +110,32 @@ export function BestsellersSection() {
                       </div>
 
                       <div className="mt-3 space-y-1">
+                        {mrp !== undefined &&
+                          price !== undefined &&
+                          mrp > price && (
+                            <span
+                              className="inline-flex items-center rounded-md px-2.5 py-1 text-[12px] font-semibold"
+                              style={{
+                                background:
+                                  "linear-gradient(90deg, #FED7AA 0%, #FFF3E0 100%)",
+                                color: "#111827",
+                              }}
+                            >
+                              ₹{(mrp - price).toLocaleString("en-IN")} OFF
+                            </span>
+                          )}
                         <h3 className="text-[14px] font-semibold leading-5 line-clamp-2">
                           {p.title}
                         </h3>
                         <div className="flex items-center gap-1 text-[12px] text-foreground-secondary">
-                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-background-tertiary">
-                            ⭐ 5.0
-                          </span>
-                          <span>{p.brand?.name || ""}</span>
+                          <ProductRating
+                            productId={p.id as string}
+                            variant="compact"
+                            showReviewCount={false}
+                            hideIfNoReviews={true}
+                            className="!m-0"
+                          />
+                          <span className="ml-1">{p.brand?.name || ""}</span>
                         </div>
                         <div className="flex items-end gap-2 mt-1">
                           {discount > 0 && (

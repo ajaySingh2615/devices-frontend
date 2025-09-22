@@ -9,6 +9,7 @@ interface ProductRatingProps {
   variant?: "compact" | "detailed";
   showReviewCount?: boolean;
   className?: string;
+  hideIfNoReviews?: boolean;
 }
 
 export default function ProductRating({
@@ -16,6 +17,7 @@ export default function ProductRating({
   variant = "detailed",
   showReviewCount = true,
   className = "",
+  hideIfNoReviews = false,
 }: ProductRatingProps) {
   const [summary, setSummary] = useState<ProductReviewSummary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -51,6 +53,7 @@ export default function ProductRating({
   }
 
   if (!summary || summary.totalReviews === 0) {
+    if (hideIfNoReviews) return null;
     return (
       <div className={`flex items-center space-x-2 ${className}`}>
         <div className="flex">
