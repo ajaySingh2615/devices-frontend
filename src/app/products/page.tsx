@@ -43,6 +43,7 @@ export default function ProductsPage() {
   const [processorSeries, setProcessorSeries] = useState("");
   const [processorGeneration, setProcessorGeneration] = useState("");
   const [priceRange, setPriceRange] = useState({ min: "", max: "" });
+  const [operatingSystem, setOperatingSystem] = useState("");
   const [sort, setSort] = useState<
     "relevance" | "newest" | "price_asc" | "price_desc"
   >("relevance");
@@ -68,6 +69,7 @@ export default function ProductsPage() {
       min: searchParams.get("minPrice") || "",
       max: searchParams.get("maxPrice") || "",
     });
+    setOperatingSystem(searchParams.get("operatingSystem") || "");
     setSearchQuery(searchParams.get("q") || "");
     setSort((searchParams.get("sort") as any) || "relevance");
     searchProducts();
@@ -123,6 +125,7 @@ export default function ProductsPage() {
         maxPrice: searchParams.get("maxPrice")
           ? parseFloat(searchParams.get("maxPrice")!)
           : undefined,
+        operatingSystem: searchParams.get("operatingSystem") || undefined,
         sort: backendSort,
         direction: backendDirection,
       } as const;
@@ -205,6 +208,10 @@ export default function ProductsPage() {
     processorGeneration && {
       key: "processorGeneration",
       label: processorGeneration,
+    },
+    operatingSystem && {
+      key: "operatingSystem",
+      label: operatingSystem.toUpperCase(),
     },
   ].filter(Boolean) as { key: string; label: string }[];
 
@@ -338,6 +345,11 @@ export default function ProductsPage() {
                 setProcessorGeneration={(v) => {
                   setProcessorGeneration(v);
                   updateFilters({ processorGeneration: v, q: "" });
+                }}
+                operatingSystem={operatingSystem}
+                setOperatingSystem={(v) => {
+                  setOperatingSystem(v);
+                  updateFilters({ operatingSystem: v, q: "" });
                 }}
                 priceRange={priceRange}
                 setPriceRange={setPriceRange}
@@ -564,6 +576,8 @@ function FiltersCard(props: {
   setProcessorSeries?: (v: string) => void;
   processorGeneration?: string;
   setProcessorGeneration?: (v: string) => void;
+  operatingSystem?: string;
+  setOperatingSystem?: (v: string) => void;
   priceRange: { min: string; max: string };
   setPriceRange: (v: { min: string; max: string }) => void;
   applyPrice: () => void;
@@ -584,6 +598,8 @@ function FiltersCard(props: {
     setProcessorSeries = () => {},
     processorGeneration = "",
     setProcessorGeneration = () => {},
+    operatingSystem = "",
+    setOperatingSystem = () => {},
     priceRange,
     setPriceRange,
     applyPrice,
@@ -689,6 +705,33 @@ function FiltersCard(props: {
                 variant="ghost"
                 className="w-full mt-1"
               ></Button>
+            )}
+          </div>
+
+          {/* Operating System */}
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-foreground-secondary">
+              Operating System
+            </label>
+            <select
+              value={operatingSystem}
+              onChange={(e) => setOperatingSystem(e.target.value)}
+              className="w-full p-2.5 rounded-lg border border-border bg-surface"
+            >
+              <option value="">Any OS</option>
+              <option value="windows">Windows</option>
+              <option value="macos">macOS</option>
+              <option value="linux">Linux</option>
+              <option value="chrome">ChromeOS</option>
+            </select>
+            {!compact && (
+              <Button
+                onClick={() => setOperatingSystem(operatingSystem)}
+                variant="ghost"
+                className="w-full"
+              >
+                Apply OS
+              </Button>
             )}
           </div>
 

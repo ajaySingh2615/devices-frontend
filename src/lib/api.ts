@@ -667,6 +667,7 @@ export interface ProductVariant {
   cpuSeries?: string;
   cpuGeneration?: string;
   cpuModel?: string;
+  operatingSystem?: string;
 }
 
 export interface Inventory {
@@ -711,6 +712,7 @@ export interface ProductSearchParams {
   processorVendor?: string;
   processorSeries?: string;
   processorGeneration?: string;
+  operatingSystem?: string;
   bestseller?: boolean;
 }
 
@@ -783,6 +785,7 @@ export interface CreateVariantRequest {
   cpuSeries?: string;
   cpuGeneration?: string;
   cpuModel?: string;
+  operatingSystem?: string;
   priceMrp: number;
   priceSale: number;
   taxRate?: number;
@@ -800,6 +803,7 @@ export interface UpdateVariantRequest {
   cpuSeries?: string;
   cpuGeneration?: string;
   cpuModel?: string;
+  operatingSystem?: string;
   priceMrp?: number;
   priceSale?: number;
   taxRate?: number;

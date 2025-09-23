@@ -61,6 +61,7 @@ interface VariantFormData {
   cpuSeries: string;
   cpuGeneration: string;
   cpuModel: string;
+  operatingSystem: string;
   priceMrp: number;
   priceSale: number;
   taxRate: number;
@@ -119,6 +120,7 @@ export default function NewProductPage() {
       cpuSeries: "",
       cpuGeneration: "",
       cpuModel: "",
+      operatingSystem: "",
       priceMrp: 0,
       priceSale: 0,
       taxRate: 18,
@@ -181,6 +183,7 @@ export default function NewProductPage() {
         cpuSeries: "",
         cpuGeneration: "",
         cpuModel: "",
+        operatingSystem: "",
         priceMrp: 0,
         priceSale: 0,
         taxRate: 18,
@@ -281,6 +284,7 @@ export default function NewProductPage() {
           cpuSeries: v.cpuSeries || undefined,
           cpuGeneration: v.cpuGeneration || undefined,
           cpuModel: v.cpuModel || undefined,
+          operatingSystem: v.operatingSystem || undefined,
           priceMrp: v.priceMrp,
           priceSale: v.priceSale,
           taxRate: v.taxRate,
@@ -614,7 +618,7 @@ export default function NewProductPage() {
                   </div>
 
                   {/* CPU Row */}
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                     <div>
                       <label className="block text-sm font-medium mb-2">
                         CPU Vendor
@@ -652,6 +656,28 @@ export default function NewProductPage() {
                       value={v.cpuModel}
                       onChange={(val) => updateVariant(index, "cpuModel", val)}
                     />
+                    <div>
+                      <label className="block text-sm font-medium mb-2">
+                        Operating System
+                      </label>
+                      <select
+                        value={v.operatingSystem}
+                        onChange={(e) =>
+                          updateVariant(
+                            index,
+                            "operatingSystem",
+                            e.target.value
+                          )
+                        }
+                        className="w-full px-3 py-2 rounded-md border border-border bg-background"
+                      >
+                        <option value="">—</option>
+                        <option value="windows">Windows</option>
+                        <option value="macos">macOS</option>
+                        <option value="linux">Linux</option>
+                        <option value="chrome">ChromeOS</option>
+                      </select>
+                    </div>
                   </div>
 
                   {/* Row 2 */}

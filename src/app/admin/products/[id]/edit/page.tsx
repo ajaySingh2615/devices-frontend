@@ -56,6 +56,7 @@ interface VariantFormData {
   cpuSeries: string;
   cpuGeneration: string;
   cpuModel: string;
+  operatingSystem: string;
   priceMrp: number;
   priceSale: number;
   taxRate: number;
@@ -120,6 +121,8 @@ export default function EditProductPage() {
           cpuSeries: variant.cpuSeries || "",
           cpuGeneration: variant.cpuGeneration || "",
           cpuModel: variant.cpuModel || "",
+          operatingSystem:
+            (variant as any).operatingSystem?.toLowerCase?.() || "",
           priceMrp: variant.priceMrp,
           priceSale: variant.priceSale,
           taxRate: variant.taxRate,
@@ -142,6 +145,7 @@ export default function EditProductPage() {
             cpuSeries: "",
             cpuGeneration: "",
             cpuModel: "",
+            operatingSystem: "",
             priceMrp: 0,
             priceSale: 0,
             taxRate: 18,
@@ -188,6 +192,7 @@ export default function EditProductPage() {
         cpuSeries: "",
         cpuGeneration: "",
         cpuModel: "",
+        operatingSystem: "",
         priceMrp: 0,
         priceSale: 0,
         taxRate: 18,
@@ -258,6 +263,7 @@ export default function EditProductPage() {
             cpuSeries: variantData.cpuSeries || undefined,
             cpuGeneration: variantData.cpuGeneration || undefined,
             cpuModel: variantData.cpuModel || undefined,
+            operatingSystem: variantData.operatingSystem || undefined,
             priceMrp: variantData.priceMrp,
             priceSale: variantData.priceSale,
             taxRate: variantData.taxRate,
@@ -286,6 +292,7 @@ export default function EditProductPage() {
             cpuSeries: variantData.cpuSeries || undefined,
             cpuGeneration: variantData.cpuGeneration || undefined,
             cpuModel: variantData.cpuModel || undefined,
+            operatingSystem: variantData.operatingSystem || undefined,
             priceMrp: variantData.priceMrp,
             priceSale: variantData.priceSale,
             taxRate: variantData.taxRate,
@@ -670,8 +677,8 @@ export default function EditProductPage() {
                   </div>
                 </div>
 
-                {/* CPU Row */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                {/* CPU + OS Row */}
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                   <div>
                     <label className="block text-sm font-medium mb-2">
                       CPU Vendor
@@ -727,6 +734,24 @@ export default function EditProductPage() {
                       }
                       placeholder="i7-1165G7 / 5600U / M2"
                     />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      Operating System
+                    </label>
+                    <select
+                      value={variant.operatingSystem}
+                      onChange={(e) =>
+                        updateVariant(index, "operatingSystem", e.target.value)
+                      }
+                      className="w-full p-3 border border-border rounded-lg focus:ring-2 focus:ring-primary bg-surface"
+                    >
+                      <option value="">—</option>
+                      <option value="windows">Windows</option>
+                      <option value="macos">macOS</option>
+                      <option value="linux">Linux</option>
+                      <option value="chrome">ChromeOS</option>
+                    </select>
                   </div>
                 </div>
 

@@ -8,7 +8,7 @@ export function ShopByOSSection() {
     {
       title: "Windows\nLaptops",
       image: "/shop_by_os/windows-laptops.webp",
-      href: "/products?q=windows%20laptop",
+      href: "/products?operatingSystem=windows",
       gradient: "from-rose-100 to-rose-200",
       priceText: "Starting at",
       price: "₹9,999",
@@ -16,7 +16,7 @@ export function ShopByOSSection() {
     {
       title: "Apple\nMac OS",
       image: "/shop_by_os/apple-mac-os.webp",
-      href: "/products?q=mac%20os%20laptop",
+      href: "/products?operatingSystem=macos",
       gradient: "from-sky-100 to-indigo-100",
       priceText: "Starting at",
       price: "₹19,999",
