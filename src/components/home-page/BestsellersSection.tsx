@@ -1,17 +1,15 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { RevealSection } from "@/components/home-page/RevealSection";
 import { catalogApi, Product, PageResponse } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/Card";
-import { Button } from "@/components/ui/Button";
 import ProductRating from "@/components/rating/ProductRating";
 
 export function BestsellersSection() {
   const [data, setData] = useState<PageResponse<Product> | null>(null);
   const [loading, setLoading] = useState(true);
-  const scrollRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -63,10 +61,24 @@ export function BestsellersSection() {
         <div className="home-container">
           <div className="flex items-center justify-between mb-8">
             <h2 className="home-section-title">Bestsellers</h2>
-            <Link href="/products">
-              <Button variant="outline" size="sm">
-                View all
-              </Button>
+            <Link
+              href="/products"
+              className="inline-flex items-center gap-2 rounded-full border border-border bg-white/90 px-4 py-2 text-sm font-semibold text-foreground shadow-sm hover:border-primary/20 hover:bg-primary/10 hover:text-primary transition-colors"
+            >
+              <span>View all</span>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                className="h-4 w-4"
+                aria-hidden="true"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M10.293 3.293a1 1 0 011.414 0l5 5a1 1 0 010 1.414l-5 5a1 1 0 11-1.414-1.414L13.586 11H4a1 1 0 110-2h9.586l-3.293-3.293a1 1 0 010-1.414z"
+                  clipRule="evenodd"
+                />
+              </svg>
             </Link>
           </div>
 
@@ -75,7 +87,9 @@ export function BestsellersSection() {
               type="button"
               aria-label="Scroll left"
               onClick={() =>
-                scrollRef.current?.scrollBy({ left: -400, behavior: "smooth" })
+                document
+                  .getElementById("best-scroll")
+                  ?.scrollBy({ left: -400, behavior: "smooth" })
               }
               className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 h-9 w-9 items-center justify-center rounded-full bg-white/90 shadow border border-border hover:bg-white"
             >
@@ -85,7 +99,9 @@ export function BestsellersSection() {
               type="button"
               aria-label="Scroll right"
               onClick={() =>
-                scrollRef.current?.scrollBy({ left: 400, behavior: "smooth" })
+                document
+                  .getElementById("best-scroll")
+                  ?.scrollBy({ left: 400, behavior: "smooth" })
               }
               className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 h-9 w-9 items-center justify-center rounded-full bg-white/90 shadow border border-border hover:bg-white"
             >
@@ -93,7 +109,7 @@ export function BestsellersSection() {
             </button>
 
             <div
-              ref={scrollRef}
+              id="best-scroll"
               className="overflow-x-auto snap-x snap-mandatory scroll-px-3 pr-2"
             >
               <div className="flex gap-3 min-w-max px-1">
@@ -113,8 +129,19 @@ export function BestsellersSection() {
                   return (
                     <Card
                       key={p.id}
-                      className="overflow-hidden hover:shadow-md transition-shadow duration-200 snap-start flex-none w-[220px] sm:w-[230px] lg:w-[240px]"
+                      className="relative overflow-hidden hover:shadow-md transition-shadow duration-200 snap-start flex-none w-[220px] sm:w-[230px] lg:w-[240px]"
                     >
+                      {typeof available === "number" && available >= 0 && (
+                        <span
+                          className={`absolute right-1 top-1 md:right-2 md:top-2 rounded-full px-2.5 py-1 text-[12px] font-semibold shadow z-10 border ${
+                            available <= 5
+                              ? "bg-rose-100 text-rose-600 border-rose-200"
+                              : "bg-gray-100 text-gray-900 border-gray-200"
+                          }`}
+                        >
+                          {available} left
+                        </span>
+                      )}
                       <CardContent className="p-3">
                         <Link href={`/products/${p.slug}`} className="block">
                           <div className="relative bg-background-secondary rounded-md flex items-center justify-center h-36 md:h-40 lg:h-44">
@@ -144,21 +171,7 @@ export function BestsellersSection() {
                                   ₹{(mrp - price).toLocaleString("en-IN")} OFF
                                 </span>
                               )}
-                            {typeof available === "number" &&
-                              available >= 0 && (
-                                <span
-                                  className="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-medium ml-2"
-                                  style={{
-                                    background:
-                                      available <= 5 ? "#FEF2F2" : "#F3F4F6",
-                                    color:
-                                      available <= 5 ? "#B91C1C" : "#374151",
-                                    border: "1px solid rgba(0,0,0,0.05)",
-                                  }}
-                                >
-                                  {available} left
-                                </span>
-                              )}
+
                             <h3 className="text-[13px] font-semibold leading-5 line-clamp-2">
                               {p.title}
                             </h3>
