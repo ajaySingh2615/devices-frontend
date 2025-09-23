@@ -643,6 +643,8 @@ export interface Product {
   brand?: Brand;
   variants?: ProductVariant[];
   images?: Media[];
+  averageRating?: number;
+  totalReviews?: number;
 }
 
 export interface ProductVariant {
