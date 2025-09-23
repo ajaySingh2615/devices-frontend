@@ -14,3 +14,4 @@ export { RevealSection } from "./RevealSection";
 export { CompanyLogosSection } from "./CompanyLogosSection";
 export { ShopByProcessorSection } from "./ShopByProcessorSection";
 export { BestsellersSection } from "./BestsellersSection";
+export { ShopByOSSection } from "./ShopByOSSection";
