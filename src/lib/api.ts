@@ -668,6 +668,8 @@ export interface ProductVariant {
   cpuGeneration?: string;
   cpuModel?: string;
   operatingSystem?: string;
+  touchscreen?: boolean;
+  useCase?: "MULTI_TASKING" | "EVERYDAY_NEEDS";
 }
 
 export interface Inventory {
@@ -713,6 +715,8 @@ export interface ProductSearchParams {
   processorSeries?: string;
   processorGeneration?: string;
   operatingSystem?: string;
+  touchscreen?: boolean;
+  useCase?: string;
   bestseller?: boolean;
 }
 
@@ -786,6 +790,8 @@ export interface CreateVariantRequest {
   cpuGeneration?: string;
   cpuModel?: string;
   operatingSystem?: string;
+  touchscreen?: boolean;
+  useCase?: string;
   priceMrp: number;
   priceSale: number;
   taxRate?: number;
@@ -804,6 +810,8 @@ export interface UpdateVariantRequest {
   cpuGeneration?: string;
   cpuModel?: string;
   operatingSystem?: string;
+  touchscreen?: boolean;
+  useCase?: string;
   priceMrp?: number;
   priceSale?: number;
   taxRate?: number;

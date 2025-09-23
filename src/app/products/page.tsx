@@ -44,6 +44,8 @@ export default function ProductsPage() {
   const [processorGeneration, setProcessorGeneration] = useState("");
   const [priceRange, setPriceRange] = useState({ min: "", max: "" });
   const [operatingSystem, setOperatingSystem] = useState("");
+  const [touchscreen, setTouchscreen] = useState("");
+  const [useCase, setUseCase] = useState("");
   const [sort, setSort] = useState<
     "relevance" | "newest" | "price_asc" | "price_desc"
   >("relevance");
@@ -70,6 +72,8 @@ export default function ProductsPage() {
       max: searchParams.get("maxPrice") || "",
     });
     setOperatingSystem(searchParams.get("operatingSystem") || "");
+    setTouchscreen(searchParams.get("touchscreen") || "");
+    setUseCase(searchParams.get("useCase") || "");
     setSearchQuery(searchParams.get("q") || "");
     setSort((searchParams.get("sort") as any) || "relevance");
     searchProducts();
@@ -126,6 +130,8 @@ export default function ProductsPage() {
           ? parseFloat(searchParams.get("maxPrice")!)
           : undefined,
         operatingSystem: searchParams.get("operatingSystem") || undefined,
+        touchscreen: searchParams.get("touchscreen") || undefined,
+        useCase: searchParams.get("useCase") || undefined,
         sort: backendSort,
         direction: backendDirection,
       } as const;
@@ -212,6 +218,14 @@ export default function ProductsPage() {
     operatingSystem && {
       key: "operatingSystem",
       label: operatingSystem.toUpperCase(),
+    },
+    touchscreen && {
+      key: "touchscreen",
+      label: touchscreen === "true" ? "Touchscreen" : "Non-touch",
+    },
+    useCase && {
+      key: "useCase",
+      label: useCase === "MULTI_TASKING" ? "Multi-tasking" : "Everyday Needs",
     },
   ].filter(Boolean) as { key: string; label: string }[];
 
@@ -350,6 +364,16 @@ export default function ProductsPage() {
                 setOperatingSystem={(v) => {
                   setOperatingSystem(v);
                   updateFilters({ operatingSystem: v, q: "" });
+                }}
+                touchscreen={touchscreen}
+                setTouchscreen={(v) => {
+                  setTouchscreen(v);
+                  updateFilters({ touchscreen: v, q: "" });
+                }}
+                useCase={useCase}
+                setUseCase={(v) => {
+                  setUseCase(v);
+                  updateFilters({ useCase: v, q: "" });
                 }}
                 priceRange={priceRange}
                 setPriceRange={setPriceRange}
@@ -578,6 +602,10 @@ function FiltersCard(props: {
   setProcessorGeneration?: (v: string) => void;
   operatingSystem?: string;
   setOperatingSystem?: (v: string) => void;
+  touchscreen?: string;
+  setTouchscreen?: (v: string) => void;
+  useCase?: string;
+  setUseCase?: (v: string) => void;
   priceRange: { min: string; max: string };
   setPriceRange: (v: { min: string; max: string }) => void;
   applyPrice: () => void;
@@ -600,6 +628,10 @@ function FiltersCard(props: {
     setProcessorGeneration = () => {},
     operatingSystem = "",
     setOperatingSystem = () => {},
+    touchscreen = "",
+    setTouchscreen = () => {},
+    useCase = "",
+    setUseCase = () => {},
     priceRange,
     setPriceRange,
     applyPrice,
@@ -731,6 +763,56 @@ function FiltersCard(props: {
                 className="w-full"
               >
                 Apply OS
+              </Button>
+            )}
+          </div>
+
+          {/* Touchscreen */}
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-foreground-secondary">
+              Touchscreen
+            </label>
+            <select
+              value={touchscreen}
+              onChange={(e) => setTouchscreen(e.target.value)}
+              className="w-full p-2.5 rounded-lg border border-border bg-surface"
+            >
+              <option value="">Any</option>
+              <option value="true">Yes</option>
+              <option value="false">No</option>
+            </select>
+            {!compact && (
+              <Button
+                onClick={() => setTouchscreen(touchscreen)}
+                variant="ghost"
+                className="w-full"
+              >
+                Apply Touchscreen
+              </Button>
+            )}
+          </div>
+
+          {/* Use Case */}
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-foreground-secondary">
+              Use Case
+            </label>
+            <select
+              value={useCase}
+              onChange={(e) => setUseCase(e.target.value)}
+              className="w-full p-2.5 rounded-lg border border-border bg-surface"
+            >
+              <option value="">Any</option>
+              <option value="MULTI_TASKING">Multi-tasking</option>
+              <option value="EVERYDAY_NEEDS">Everyday Needs</option>
+            </select>
+            {!compact && (
+              <Button
+                onClick={() => setUseCase(useCase)}
+                variant="ghost"
+                className="w-full"
+              >
+                Apply Use Case
               </Button>
             )}
           </div>

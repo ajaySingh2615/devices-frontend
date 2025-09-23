@@ -27,17 +27,17 @@ export function ShopByOSSection() {
     {
       title: "Laptops for\nMulti-tasking",
       image: "/shop_by_os/laptops-for-multi-tasking.webp",
-      href: "/products?q=multi%20tasking%20laptop",
+      href: "/products?useCase=MULTI_TASKING",
     },
     {
       title: "Laptops that are\nTouchscreen",
       image: "/shop_by_os/laptops-that-are-touchscreen.webp",
-      href: "/products?q=touchscreen%20laptop",
+      href: "/products?touchscreen=true",
     },
     {
       title: "Laptops for\nEveryday Needs",
       image: "/shop_by_os/laptops-for-everyday-needs.webp",
-      href: "/products?q=everyday%20laptop",
+      href: "/products?useCase=EVERYDAY_NEEDS",
     },
   ] as const;
 

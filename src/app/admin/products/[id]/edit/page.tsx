@@ -64,6 +64,8 @@ interface VariantFormData {
   quantity: number;
   safetyStock: number;
   isActive: boolean;
+  touchscreen?: boolean;
+  useCase?: string;
 }
 
 export default function EditProductPage() {
@@ -130,6 +132,8 @@ export default function EditProductPage() {
           quantity: variant.inventory?.quantity || 0, // Load actual inventory quantity
           safetyStock: variant.inventory?.safetyStock || 5, // Load actual safety stock
           isActive: variant.isActive,
+          touchscreen: (variant as any).touchscreen ?? false,
+          useCase: (variant as any).useCase || "",
         }));
         setVariants(variantData);
       } else {
@@ -153,6 +157,8 @@ export default function EditProductPage() {
             quantity: 0,
             safetyStock: 5,
             isActive: true,
+            touchscreen: false,
+            useCase: "",
           } as VariantFormData,
         ]);
       }
@@ -200,6 +206,8 @@ export default function EditProductPage() {
         quantity: 0,
         safetyStock: 5,
         isActive: true,
+        touchscreen: false,
+        useCase: "",
       } as VariantFormData,
     ]);
   };
@@ -264,6 +272,8 @@ export default function EditProductPage() {
             cpuGeneration: variantData.cpuGeneration || undefined,
             cpuModel: variantData.cpuModel || undefined,
             operatingSystem: variantData.operatingSystem || undefined,
+            touchscreen: variantData.touchscreen,
+            useCase: variantData.useCase || undefined,
             priceMrp: variantData.priceMrp,
             priceSale: variantData.priceSale,
             taxRate: variantData.taxRate,
@@ -293,6 +303,8 @@ export default function EditProductPage() {
             cpuGeneration: variantData.cpuGeneration || undefined,
             cpuModel: variantData.cpuModel || undefined,
             operatingSystem: variantData.operatingSystem || undefined,
+            touchscreen: variantData.touchscreen,
+            useCase: variantData.useCase || undefined,
             priceMrp: variantData.priceMrp,
             priceSale: variantData.priceSale,
             taxRate: variantData.taxRate,
@@ -678,7 +690,7 @@ export default function EditProductPage() {
                 </div>
 
                 {/* CPU + OS Row */}
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
                   <div>
                     <label className="block text-sm font-medium mb-2">
                       CPU Vendor
@@ -751,6 +763,41 @@ export default function EditProductPage() {
                       <option value="macos">macOS</option>
                       <option value="linux">Linux</option>
                       <option value="chrome">ChromeOS</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      Touchscreen
+                    </label>
+                    <select
+                      value={variant.touchscreen ? "true" : "false"}
+                      onChange={(e) =>
+                        updateVariant(
+                          index,
+                          "touchscreen",
+                          e.target.value === "true"
+                        )
+                      }
+                      className="w-full p-3 border border-border rounded-lg focus:ring-2 focus:ring-primary bg-surface"
+                    >
+                      <option value="false">No</option>
+                      <option value="true">Yes</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      Use Case
+                    </label>
+                    <select
+                      value={variant.useCase || ""}
+                      onChange={(e) =>
+                        updateVariant(index, "useCase", e.target.value)
+                      }
+                      className="w-full p-3 border border-border rounded-lg focus:ring-2 focus:ring-primary bg-surface"
+                    >
+                      <option value="">—</option>
+                      <option value="MULTI_TASKING">Multi-tasking</option>
+                      <option value="EVERYDAY_NEEDS">Everyday Needs</option>
                     </select>
                   </div>
                 </div>

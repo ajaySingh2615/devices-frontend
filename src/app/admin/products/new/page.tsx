@@ -62,6 +62,8 @@ interface VariantFormData {
   cpuGeneration: string;
   cpuModel: string;
   operatingSystem: string;
+  touchscreen: boolean;
+  useCase: string;
   priceMrp: number;
   priceSale: number;
   taxRate: number;
@@ -121,6 +123,8 @@ export default function NewProductPage() {
       cpuGeneration: "",
       cpuModel: "",
       operatingSystem: "",
+      touchscreen: false,
+      useCase: "",
       priceMrp: 0,
       priceSale: 0,
       taxRate: 18,
@@ -184,6 +188,8 @@ export default function NewProductPage() {
         cpuGeneration: "",
         cpuModel: "",
         operatingSystem: "",
+        touchscreen: false,
+        useCase: "",
         priceMrp: 0,
         priceSale: 0,
         taxRate: 18,
@@ -285,6 +291,8 @@ export default function NewProductPage() {
           cpuGeneration: v.cpuGeneration || undefined,
           cpuModel: v.cpuModel || undefined,
           operatingSystem: v.operatingSystem || undefined,
+          touchscreen: v.touchscreen,
+          useCase: v.useCase || undefined,
           priceMrp: v.priceMrp,
           priceSale: v.priceSale,
           taxRate: v.taxRate,
@@ -617,8 +625,8 @@ export default function NewProductPage() {
                     />
                   </div>
 
-                  {/* CPU Row */}
-                  <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                  {/* CPU + OS/Features Row */}
+                  <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
                     <div>
                       <label className="block text-sm font-medium mb-2">
                         CPU Vendor
@@ -676,6 +684,41 @@ export default function NewProductPage() {
                         <option value="macos">macOS</option>
                         <option value="linux">Linux</option>
                         <option value="chrome">ChromeOS</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-2">
+                        Touchscreen
+                      </label>
+                      <select
+                        value={v.touchscreen ? "true" : "false"}
+                        onChange={(e) =>
+                          updateVariant(
+                            index,
+                            "touchscreen",
+                            e.target.value === "true"
+                          )
+                        }
+                        className="w-full px-3 py-2 rounded-md border border-border bg-background"
+                      >
+                        <option value="false">No</option>
+                        <option value="true">Yes</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-2">
+                        Use Case
+                      </label>
+                      <select
+                        value={v.useCase}
+                        onChange={(e) =>
+                          updateVariant(index, "useCase", e.target.value)
+                        }
+                        className="w-full px-3 py-2 rounded-md border border-border bg-background"
+                      >
+                        <option value="">—</option>
+                        <option value="MULTI_TASKING">Multi-tasking</option>
+                        <option value="EVERYDAY_NEEDS">Everyday Needs</option>
                       </select>
                     </div>
                   </div>
