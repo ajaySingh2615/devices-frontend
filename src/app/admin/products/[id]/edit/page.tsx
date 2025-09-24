@@ -591,19 +591,42 @@ export default function EditProductPage() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <div>
+                  <div className="md:col-span-2 lg:col-span-3">
                     <label className="block text-sm font-medium mb-2">
-                      SKU *
+                      SKU
                     </label>
-                    <Input
-                      type="text"
-                      value={variant.sku}
-                      onChange={(e) =>
-                        updateVariant(index, "sku", e.target.value)
-                      }
-                      placeholder="Product SKU"
-                      required
-                    />
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <Input
+                        type="text"
+                        value={variant.sku}
+                        onChange={(e) =>
+                          updateVariant(index, "sku", e.target.value)
+                        }
+                        placeholder="Auto-generated if left blank"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          const rnd =
+                            "SKU-" +
+                            Math.random()
+                              .toString(36)
+                              .slice(2, 8)
+                              .toUpperCase() +
+                            "-" +
+                            Date.now().toString(36).toUpperCase();
+                          updateVariant(index, "sku", rnd);
+                        }}
+                        className="sm:w-auto w-full"
+                      >
+                        Generate
+                      </Button>
+                    </div>
+                    <p className="text-[12px] text-foreground-light mt-1">
+                      Leave blank to keep existing or auto-generate when adding
+                      new variant.
+                    </p>
                   </div>
 
                   <div>
