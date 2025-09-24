@@ -1573,4 +1573,17 @@ export const healthApi = {
   },
 };
 
+export const newsletterApi = {
+  subscribe: async (
+    email: string,
+    source: string = "homepage"
+  ): Promise<{ ok: boolean }> => {
+    const response = await api.post("/api/v1/newsletter/subscribe", {
+      email,
+      source,
+    });
+    return response.data;
+  },
+};
+
 export default api;

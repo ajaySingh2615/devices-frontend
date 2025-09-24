@@ -1,31 +1,66 @@
 "use client";
 
 import { Button } from "@/components/ui/Button";
+import { useState } from "react";
+import toast from "react-hot-toast";
+import { newsletterApi } from "@/lib/api";
 import { RevealSection } from "./RevealSection";
 
 export function NewsletterSection() {
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const valid =
+      /^(?:[a-zA-Z0-9_'^&+%`{}~!$*-]+(?:\.[a-zA-Z0-9_'^&+%`{}~!$*-]+)*)@(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$/.test(
+        email.trim()
+      );
+    if (!valid) return toast.error("Please enter a valid email address.");
+    try {
+      setLoading(true);
+      await newsletterApi.subscribe(email.trim(), "homepage");
+      toast.success("Subscribed! You'll hear from us soon.");
+      setEmail("");
+    } catch (err: any) {
+      toast.error(
+        err?.response?.data?.message || "Something went wrong. Try again."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <RevealSection>
       <section className="home-newsletter">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold font-display mb-4">
+          <h2 className="text-3xl font-bold font-display !text-white mb-4">
             Stay Updated with Latest Deals
           </h2>
-          <p className="text-white font-bold mb-8">
+          <p className="text-white/80 mb-8">
             Subscribe to our newsletter and be the first to know about new
             arrivals and exclusive offers
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
+          <form
+            onSubmit={onSubmit}
+            className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto"
+          >
             <input
               type="email"
               placeholder="Enter your email"
-              className="flex-1 px-4 py-3 rounded-lg bg-white text-black placeholder-gray-500 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="flex-1 px-4 py-3 rounded-lg border border-border bg-white text-foreground placeholder-foreground-muted/70 focus:outline-none focus:ring-2 focus:ring-primary/40"
             />
-            <Button className="bg-white text-primary hover:bg-gray-100">
-              Subscribe
+            <Button
+              type="submit"
+              disabled={loading}
+              className="bg-white text-primary hover:bg-gray-100"
+            >
+              {loading ? "Subscribing…" : "Subscribe"}
             </Button>
-          </div>
+          </form>
         </div>
       </section>
     </RevealSection>
