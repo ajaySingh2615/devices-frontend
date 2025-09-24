@@ -4,6 +4,9 @@ const nextConfig: NextConfig = {
   // Enable experimental features for better development experience
   experimental: {
     optimizePackageImports: ["react-icons", "react-hook-form"],
+    staleTimes: {
+      dynamic: 30, // cache for 30 seconds
+    },
   },
 
   // Handle external API calls
