@@ -43,7 +43,7 @@ export function ShopByOSSection() {
 
   return (
     <RevealSection>
-      <section className="py-12 bg-white">
+      <section className="py-12 bg-sky-50">
         <div className="home-container">
           <h2 className="home-section-title text-center mb-8">
             Shop by Operating System

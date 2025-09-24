@@ -69,11 +69,11 @@ export default function Home() {
       <ShopByProcessorSection />
       <BestsellersSection />
       <ShopByOSSection />
-      <CategorySection categories={categories} loading={loading} />
-      <FeaturedProductsSection
+      {/* <CategorySection categories={categories} loading={loading} /> */}
+      {/* <FeaturedProductsSection
         featuredProducts={featuredProducts}
         loading={loading}
-      />
+      /> */}
       <KPISection scrollY={scrollY} />
       <NewsletterSection />
       <FooterSection scrollY={scrollY} />
