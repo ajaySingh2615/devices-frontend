@@ -51,7 +51,7 @@ export default function KPISection({ scrollY }: { scrollY?: number }) {
   );
 
   return (
-    <section className="relative overflow-hidden py-14 md:py-16">
+    <section className="relative overflow-hidden py-14 md:py-16 bg-white">
       {/* BACKGROUND LAYERS */}
       <AnimatedBackground />
 
@@ -282,49 +282,9 @@ function useMagneticTilt(ref: React.RefObject<HTMLDivElement | null>) {
 /* --------------------------- Animated Background ----------------------- */
 function AnimatedBackground() {
   return (
-    <div aria-hidden className="pointer-events-none absolute inset-0">
-      {/* soft gradient wash */}
-      <div className="absolute inset-0 bg-gradient-to-b from-white via-sky-50/60 to-white dark:from-transparent dark:via-sky-900/10 dark:to-transparent" />
-
-      {/* radial orbs */}
-      <div className="absolute -top-24 -left-16 h-64 w-64 rounded-full bg-sky-200/40 blur-3xl" />
-      <div className="absolute -top-24 -right-16 h-64 w-64 rounded-full bg-indigo-200/40 blur-3xl" />
-
-      {/* animated grid overlay */}
-      <div className="absolute inset-0 opacity-[0.35] [mask-image:radial-gradient(60%_60%_at_50%_30%,black,transparent)]">
-        <svg className="h-full w-full" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <pattern
-              id="grid"
-              width="32"
-              height="32"
-              patternUnits="userSpaceOnUse"
-            >
-              <path
-                d="M 32 0 L 0 0 0 32"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="0.5"
-                className="text-foreground/20"
-              />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#grid)" />
-        </svg>
-      </div>
-
-      {/* sheen sweep */}
-      <div className="absolute -inset-x-40 -top-20 h-24 skew-y-3 bg-gradient-to-r from-transparent via-white/40 to-transparent dark:via-white/10 animate-[sheen_6s_linear_infinite]" />
-      <style jsx>{`
-        @keyframes sheen {
-          0% {
-            transform: translateX(-30%) skewY(3deg);
-          }
-          100% {
-            transform: translateX(30%) skewY(3deg);
-          }
-        }
-      `}</style>
-    </div>
+    <div
+      aria-hidden
+      className="pointer-events-none absolute inset-0 bg-white"
+    />
   );
 }
