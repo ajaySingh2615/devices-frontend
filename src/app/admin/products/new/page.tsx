@@ -604,13 +604,41 @@ export default function NewProductPage() {
 
                   {/* Row 1 */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <Field
-                      label="SKU *"
-                      required
-                      placeholder="PROD-001"
-                      value={v.sku}
-                      onChange={(val) => updateVariant(index, "sku", val)}
-                    />
+                    <div>
+                      <label className="block text-sm font-medium mb-2">
+                        SKU
+                      </label>
+                      <div className="flex gap-2">
+                        <Input
+                          type="text"
+                          value={v.sku}
+                          onChange={(e) =>
+                            updateVariant(index, "sku", e.target.value)
+                          }
+                          placeholder="Auto-generated if left blank"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => {
+                            const rnd =
+                              "SKU-" +
+                              Math.random()
+                                .toString(36)
+                                .slice(2, 8)
+                                .toUpperCase() +
+                              "-" +
+                              Date.now().toString(36).toUpperCase();
+                            updateVariant(index, "sku", rnd);
+                          }}
+                        >
+                          Generate
+                        </Button>
+                      </div>
+                      <p className="text-[12px] text-foreground-light mt-1">
+                        Leave blank to auto-generate on save.
+                      </p>
+                    </div>
                     <Field
                       label="Color"
                       placeholder="Black"
