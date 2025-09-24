@@ -5,6 +5,7 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import { newsletterApi } from "@/lib/api";
 import { RevealSection } from "./RevealSection";
+import { motion } from "framer-motion";
 
 export function NewsletterSection() {
   const [email, setEmail] = useState("");
@@ -42,9 +43,13 @@ export function NewsletterSection() {
             arrivals and exclusive offers
           </p>
 
-          <form
+          <motion.form
             onSubmit={onSubmit}
             className="flex flex-col sm:flex-row items-stretch gap-3 max-w-md mx-auto"
+            initial={{ opacity: 0, y: 12 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 0.5 }}
           >
             <input
               type="email"
@@ -60,7 +65,7 @@ export function NewsletterSection() {
             >
               {loading ? "Subscribing…" : "Subscribe"}
             </Button>
-          </form>
+          </motion.form>
         </div>
       </section>
     </RevealSection>

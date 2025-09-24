@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { RevealSection } from "@/components/home-page/RevealSection";
+import { motion } from "framer-motion";
 
 export function ShopByOSSection() {
   const top = [
@@ -50,12 +51,32 @@ export function ShopByOSSection() {
           </h2>
 
           {/* Top row */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+          <motion.div
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, amount: 0.25 }}
+            variants={{
+              hidden: { opacity: 0 },
+              show: {
+                opacity: 1,
+                transition: { staggerChildren: 0.12, delayChildren: 0.08 },
+              },
+            }}
+            className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5"
+          >
             {top.map((card) => (
-              <Link
+              <motion.a
                 key={card.title}
                 href={card.href}
                 className={`block rounded-2xl overflow-hidden bg-gradient-to-br ${card.gradient}`}
+                variants={{
+                  hidden: { opacity: 0, y: 18 },
+                  show: {
+                    opacity: 1,
+                    y: 0,
+                    transition: { type: "spring", stiffness: 100, damping: 18 },
+                  },
+                }}
               >
                 <div className="p-6 md:p-8 flex items-center gap-6">
                   <div className="flex-1 min-w-0">
@@ -77,17 +98,37 @@ export function ShopByOSSection() {
                     />
                   </div>
                 </div>
-              </Link>
+              </motion.a>
             ))}
-          </div>
+          </motion.div>
 
           {/* Bottom row */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <motion.div
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, amount: 0.25 }}
+            variants={{
+              hidden: { opacity: 0 },
+              show: {
+                opacity: 1,
+                transition: { staggerChildren: 0.12, delayChildren: 0.08 },
+              },
+            }}
+            className="grid grid-cols-1 md:grid-cols-3 gap-5"
+          >
             {bottom.map((card) => (
-              <Link
+              <motion.a
                 key={card.title}
                 href={card.href}
                 className="block rounded-2xl overflow-hidden bg-white border border-border"
+                variants={{
+                  hidden: { opacity: 0, y: 18 },
+                  show: {
+                    opacity: 1,
+                    y: 0,
+                    transition: { type: "spring", stiffness: 100, damping: 18 },
+                  },
+                }}
               >
                 <div className="p-4 md:p-5 flex items-center justify-between gap-4">
                   <div className="min-w-0">
@@ -104,9 +145,9 @@ export function ShopByOSSection() {
                     className="h-20 md:h-24 w-auto object-contain"
                   />
                 </div>
-              </Link>
+              </motion.a>
             ))}
-          </div>
+          </motion.div>
         </div>
       </section>
     </RevealSection>

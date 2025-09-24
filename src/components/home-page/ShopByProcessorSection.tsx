@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { RevealSection } from "@/components/home-page/RevealSection";
+import { motion } from "framer-motion";
 
 export function ShopByProcessorSection() {
   const router = useRouter();
@@ -32,12 +33,32 @@ export function ShopByProcessorSection() {
             <h2 className="home-section-title">Shop By Processor</h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <motion.div
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, amount: 0.25 }}
+            variants={{
+              hidden: { opacity: 0 },
+              show: {
+                opacity: 1,
+                transition: { staggerChildren: 0.12, delayChildren: 0.08 },
+              },
+            }}
+            className="grid grid-cols-1 md:grid-cols-3 gap-6"
+          >
             {processors.map((p) => (
-              <div
+              <motion.div
                 key={p.id}
                 className="rounded-2xl overflow-hidden hover:shadow-lg transition-shadow duration-300 cursor-pointer"
                 onClick={() => router.push(p.link)}
+                variants={{
+                  hidden: { opacity: 0, y: 18 },
+                  show: {
+                    opacity: 1,
+                    y: 0,
+                    transition: { type: "spring", stiffness: 100, damping: 18 },
+                  },
+                }}
               >
                 <img
                   src={p.image}
@@ -45,9 +66,9 @@ export function ShopByProcessorSection() {
                   className="w-full h-auto object-cover"
                   loading="lazy"
                 />
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
       </section>
     </RevealSection>

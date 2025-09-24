@@ -24,7 +24,7 @@ export function RevealSection({
       initial={{ opacity: 0, y: 16 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once, amount }}
-      transition={{ duration: 0.6, ease: [0.2, 0.65, 0.3, 1], delay }}
+      transition={{ duration: 0.8, ease: [0.22, 0.61, 0.36, 1], delay }}
     >
       {children}
     </motion.div>

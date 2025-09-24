@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { RevealSection } from "@/components/home-page/RevealSection";
+import { motion } from "framer-motion";
 import { catalogApi, Product, PageResponse } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/Card";
 import ProductRating from "@/components/rating/ProductRating";
@@ -82,7 +83,13 @@ export function BestsellersSection() {
             </Link>
           </div>
 
-          <div className="relative">
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 0.7, ease: [0.22, 0.61, 0.36, 1] }}
+            className="relative"
+          >
             <button
               type="button"
               aria-label="Scroll left"
@@ -112,7 +119,19 @@ export function BestsellersSection() {
               id="best-scroll"
               className="overflow-x-auto snap-x snap-mandatory scroll-px-3 pr-2"
             >
-              <div className="flex gap-3 min-w-max px-1">
+              <motion.div
+                initial="hidden"
+                whileInView="show"
+                viewport={{ once: true, amount: 0.3 }}
+                variants={{
+                  hidden: { opacity: 0 },
+                  show: {
+                    opacity: 1,
+                    transition: { staggerChildren: 0.12, delayChildren: 0.08 },
+                  },
+                }}
+                className="flex gap-3 min-w-max px-1"
+              >
                 {data.content.map((p) => {
                   const variants = p.variants || [];
                   const bestVariant = variants.length
@@ -127,95 +146,110 @@ export function BestsellersSection() {
                   const available = bestVariant?.inventory?.available;
 
                   return (
-                    <Card
-                      key={p.id}
-                      className="relative overflow-hidden hover:shadow-md transition-shadow duration-200 snap-start flex-none w-[220px] sm:w-[230px] lg:w-[240px]"
+                    <motion.div
+                      variants={{
+                        hidden: { opacity: 0, y: 14 },
+                        show: {
+                          opacity: 1,
+                          y: 0,
+                          transition: {
+                            type: "spring",
+                            stiffness: 110,
+                            damping: 18,
+                          },
+                        },
+                      }}
                     >
-                      {typeof available === "number" && available >= 0 && (
-                        <span
-                          className={`absolute right-1 top-1 md:right-2 md:top-2 rounded-full px-2.5 py-1 text-[12px] font-semibold shadow z-10 border ${
-                            available <= 5
-                              ? "bg-rose-100 text-rose-600 border-rose-200"
-                              : "bg-gray-100 text-gray-900 border-gray-200"
-                          }`}
-                        >
-                          {available} left
-                        </span>
-                      )}
-                      <CardContent className="p-3">
-                        <Link href={`/products/${p.slug}`} className="block">
-                          <div className="relative bg-background-secondary rounded-md flex items-center justify-center h-36 md:h-40 lg:h-44">
-                            {p.images?.[0]?.url ? (
-                              <img
-                                src={p.images[0].url}
-                                alt={p.title}
-                                className="h-full w-auto object-contain"
-                              />
-                            ) : (
-                              <div className="text-4xl">📱</div>
-                            )}
-                          </div>
-
-                          <div className="mt-2 space-y-1">
-                            {mrp !== undefined &&
-                              price !== undefined &&
-                              mrp > price && (
-                                <span
-                                  className="inline-flex items-center rounded-md px-2.5 py-1 text-[12px] font-semibold"
-                                  style={{
-                                    background:
-                                      "linear-gradient(90deg, #FED7AA 0%, #FFF3E0 100%)",
-                                    color: "#111827",
-                                  }}
-                                >
-                                  ₹{(mrp - price).toLocaleString("en-IN")} OFF
-                                </span>
-                              )}
-
-                            <h3 className="text-[13px] font-semibold leading-5 line-clamp-2">
-                              {p.title}
-                            </h3>
-                            <div className="flex items-center gap-1 text-[12px] text-foreground-secondary">
-                              <ProductRating
-                                productId={p.id as string}
-                                variant="compact"
-                                showReviewCount={false}
-                                hideIfNoReviews={true}
-                                className="!m-0"
-                              />
-                              <span className="ml-1">
-                                {p.brand?.name || ""}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-3 mt-1 whitespace-nowrap">
-                              {discount > 0 && (
-                                <span
-                                  className="text-[12px] font-semibold"
-                                  style={{ color: "#dc2626" }}
-                                >
-                                  -{discount}%
-                                </span>
-                              )}
-                              {price !== undefined && (
-                                <span className="text-[18px] md:text-[19px] font-extrabold text-price">
-                                  ₹{price.toLocaleString("en-IN")}
-                                </span>
-                              )}
-                              {mrp !== undefined && mrp > (price || 0) && (
-                                <span className="text-[12px] line-through text-foreground-muted">
-                                  ₹{mrp.toLocaleString("en-IN")}
-                                </span>
+                      <Card
+                        key={p.id}
+                        className="relative overflow-hidden hover:shadow-md transition-shadow duration-200 snap-start flex-none w-[220px] sm:w-[230px] lg:w-[240px]"
+                      >
+                        {typeof available === "number" && available >= 0 && (
+                          <span
+                            className={`absolute right-1 top-1 md:right-2 md:top-2 rounded-full px-2.5 py-1 text-[12px] font-semibold shadow z-10 border ${
+                              available <= 5
+                                ? "bg-rose-100 text-rose-600 border-rose-200"
+                                : "bg-gray-100 text-gray-900 border-gray-200"
+                            }`}
+                          >
+                            {available} left
+                          </span>
+                        )}
+                        <CardContent className="p-3">
+                          <Link href={`/products/${p.slug}`} className="block">
+                            <div className="relative bg-background-secondary rounded-md flex items-center justify-center h-36 md:h-40 lg:h-44">
+                              {p.images?.[0]?.url ? (
+                                <img
+                                  src={p.images[0].url}
+                                  alt={p.title}
+                                  className="h-full w-auto object-contain"
+                                />
+                              ) : (
+                                <div className="text-4xl">📱</div>
                               )}
                             </div>
-                          </div>
-                        </Link>
-                      </CardContent>
-                    </Card>
+
+                            <div className="mt-2 space-y-1">
+                              {mrp !== undefined &&
+                                price !== undefined &&
+                                mrp > price && (
+                                  <span
+                                    className="inline-flex items-center rounded-md px-2.5 py-1 text-[12px] font-semibold"
+                                    style={{
+                                      background:
+                                        "linear-gradient(90deg, #FED7AA 0%, #FFF3E0 100%)",
+                                      color: "#111827",
+                                    }}
+                                  >
+                                    ₹{(mrp - price).toLocaleString("en-IN")} OFF
+                                  </span>
+                                )}
+
+                              <h3 className="text-[13px] font-semibold leading-5 line-clamp-2">
+                                {p.title}
+                              </h3>
+                              <div className="flex items-center gap-1 text-[12px] text-foreground-secondary">
+                                <ProductRating
+                                  productId={p.id as string}
+                                  variant="compact"
+                                  showReviewCount={false}
+                                  hideIfNoReviews={true}
+                                  className="!m-0"
+                                />
+                                <span className="ml-1">
+                                  {p.brand?.name || ""}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-3 mt-1 whitespace-nowrap">
+                                {discount > 0 && (
+                                  <span
+                                    className="text-[12px] font-semibold"
+                                    style={{ color: "#dc2626" }}
+                                  >
+                                    -{discount}%
+                                  </span>
+                                )}
+                                {price !== undefined && (
+                                  <span className="text-[18px] md:text-[19px] font-extrabold text-price">
+                                    ₹{price.toLocaleString("en-IN")}
+                                  </span>
+                                )}
+                                {mrp !== undefined && mrp > (price || 0) && (
+                                  <span className="text-[12px] line-through text-foreground-muted">
+                                    ₹{mrp.toLocaleString("en-IN")}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </Link>
+                        </CardContent>
+                      </Card>
+                    </motion.div>
                   );
                 })}
-              </div>
+              </motion.div>
             </div>
-          </div>
+          </motion.div>
         </div>
       </section>
     </RevealSection>
