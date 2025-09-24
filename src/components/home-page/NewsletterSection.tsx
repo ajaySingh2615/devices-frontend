@@ -44,19 +44,19 @@ export function NewsletterSection() {
 
           <form
             onSubmit={onSubmit}
-            className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto"
+            className="flex flex-col sm:flex-row items-stretch gap-3 max-w-md mx-auto"
           >
             <input
               type="email"
               placeholder="Enter your email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="flex-1 px-4 py-3 rounded-lg border border-border bg-white text-foreground placeholder-foreground-muted/70 focus:outline-none focus:ring-2 focus:ring-primary/40"
+              className="flex-1 h-12 px-4 rounded-lg border border-border bg-white text-foreground placeholder-foreground-muted/70 focus:outline-none focus:ring-2 focus:ring-primary/40"
             />
             <Button
               type="submit"
               disabled={loading}
-              className="bg-white text-primary hover:bg-gray-100"
+              className="h-12 px-5 rounded-lg bg-white text-primary hover:bg-gray-100 shrink-0"
             >
               {loading ? "Subscribing…" : "Subscribe"}
             </Button>
