@@ -1,362 +1,291 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { toast } from "react-hot-toast";
-import {
-  HiUser,
-  HiLogout,
-  HiCog,
-  HiShoppingCart,
-  HiHeart,
-  HiStar,
-  HiCurrencyRupee,
-} from "react-icons/hi";
-
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import {
-  userApi,
-  authApi,
-  getTokens,
-  clearTokens,
-  User,
-  orderApi,
-  wishlistApi,
-  reviewApi,
-} from "@/lib/api";
+import { Input } from "@/components/ui/Input";
+import { userApi, getTokens, clearTokens, User } from "@/lib/api";
 
 export default function DashboardPage() {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [kpiLoading, setKpiLoading] = useState(true);
-  const [ordersCount, setOrdersCount] = useState(0);
-  const [wishlistCount, setWishlistCount] = useState(0);
-  const [reviewsCount, setReviewsCount] = useState(0);
-  const [totalSpend, setTotalSpend] = useState(0);
   const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [gender, setGender] = useState<"MALE" | "FEMALE" | "UNSPECIFIED">(
+    "UNSPECIFIED"
+  );
+  const [email, setEmail] = useState("");
+  const [mobile, setMobile] = useState("");
 
   useEffect(() => {
-    const fetchUser = async () => {
+    (async () => {
       try {
         const tokens = getTokens();
-
         if (!tokens.accessToken) {
           router.push("/auth/login");
           return;
         }
-
-        const userData = await userApi.getProfile();
-        setUser(userData);
-        // Load KPIs after user is confirmed
-        try {
-          setKpiLoading(true);
-          const [ordersPage, wishlist, reviewsPage] = await Promise.all([
-            orderApi.getUserOrdersPaginated(0, 1),
-            wishlistApi.getWishlist(),
-            reviewApi.getUserReviews(0, 1),
-          ]);
-          setOrdersCount(ordersPage.totalElements || 0);
-          setWishlistCount(wishlist.totalItems || 0);
-          setReviewsCount(reviewsPage.totalElements || 0);
-          // For spend, fetch all orders (shallow) and sum grandTotal
-          try {
-            const orders = await orderApi.getUserOrders();
-            const spend = (orders || []).reduce(
-              (sum, o) => sum + Number(o.grandTotal || 0),
-              0
-            );
-            setTotalSpend(spend);
-          } catch {}
-        } catch (e) {
-          // Soft-fail KPIs; not critical
-        } finally {
-          setKpiLoading(false);
-        }
-      } catch (error: any) {
-        console.error("Failed to fetch user:", error);
-
-        // Check if it's a 403 error (unauthorized)
-        if (error.response?.status === 403) {
-          clearTokens();
-        }
-
+        const u = await userApi.getProfile();
+        setUser(u);
+        const parts = (u.name || "").split(" ");
+        setFirstName(parts[0] || "");
+        setLastName(parts.slice(1).join(" ") || "");
+        setEmail(u.email || "");
+        setMobile(u.phone || "");
+      } catch {
+        clearTokens();
         router.push("/auth/login");
       } finally {
-        setIsLoading(false);
+        setLoading(false);
       }
-    };
-
-    fetchUser();
+    })();
   }, [router]);
 
-  const handleLogout = async () => {
+  const onSave = async () => {
+    if (!user) return;
     try {
-      await authApi.logout();
-      toast.success("Logged out successfully");
-      router.push("/auth/login");
-    } catch (error) {
-      console.error("Logout failed:", error);
+      setSaving(true);
+      await userApi.updateProfile({
+        name: [firstName, lastName].filter(Boolean).join(" "),
+        phone: mobile || undefined,
+      });
+    } finally {
+      setSaving(false);
     }
   };
 
-  if (isLoading) {
+  if (loading) {
     return (
-      <div className="min-h-screen bg-background-secondary flex items-center justify-center">
+      <div className="min-h-screen grid place-items-center">
         <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" />
       </div>
     );
   }
 
-  if (!user) {
-    return null;
-  }
-
   return (
     <div className="min-h-screen bg-background-secondary">
-      {/* Header */}
-      <header className="bg-surface border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
-                <span className="text-lg font-bold text-primary">D</span>
-              </div>
-              <span className="text-xl font-bold font-display text-foreground">
-                DeviceHub
-              </span>
-            </div>
-
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-                  <span className="text-sm font-medium text-white">
-                    {user.name.charAt(0).toUpperCase()}
-                  </span>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 grid grid-cols-1 md:grid-cols-4 gap-6">
+        {/* Sidebar */}
+        <aside className="md:col-span-1">
+          <Card>
+            <CardContent className="p-0">
+              <nav className="divide-y divide-border">
+                <div className="p-4">
+                  <div className="text-sm text-foreground-muted mb-2">
+                    Hello,
+                  </div>
+                  <div className="font-semibold">{user?.name}</div>
                 </div>
-                <span className="text-sm font-medium text-foreground">
-                  {user.name}
-                </span>
-              </div>
+                <div className="p-4 space-y-1">
+                  <div className="text-xs font-semibold text-foreground-muted mb-2">
+                    MY ORDERS
+                  </div>
+                  <Link
+                    href="/account/orders"
+                    className="block px-3 py-2 rounded hover:bg-background"
+                  >
+                    My Orders
+                  </Link>
+                </div>
+                <div className="p-4 space-y-1">
+                  <div className="text-xs font-semibold text-foreground-muted mb-2">
+                    ACCOUNT SETTINGS
+                  </div>
+                  <div className="px-3 py-2 rounded bg-background font-medium">
+                    Profile Information
+                  </div>
+                  <Link
+                    href="/account/addresses"
+                    className="block px-3 py-2 rounded hover:bg-background"
+                  >
+                    Manage Addresses
+                  </Link>
+                  <button className="block w-full text-left px-3 py-2 rounded hover:bg-background text-foreground-muted cursor-not-allowed">
+                    PAN Card Information
+                  </button>
+                </div>
+                <div className="p-4 space-y-1">
+                  <div className="text-xs font-semibold text-foreground-muted mb-2">
+                    PAYMENTS
+                  </div>
+                  <button className="block w-full text-left px-3 py-2 rounded hover:bg-background">
+                    Gift Cards
+                  </button>
+                  <button className="block w-full text-left px-3 py-2 rounded hover:bg-background">
+                    Saved UPI
+                  </button>
+                  <button className="block w-full text-left px-3 py-2 rounded hover:bg-background">
+                    Saved Cards
+                  </button>
+                </div>
+                <div className="p-4 space-y-1">
+                  <div className="text-xs font-semibold text-foreground-muted mb-2">
+                    MY STUFF
+                  </div>
+                  <button className="block w-full text-left px-3 py-2 rounded hover:bg-background">
+                    My Coupons
+                  </button>
+                  <button className="block w-full text-left px-3 py-2 rounded hover:bg-background">
+                    My Reviews & Ratings
+                  </button>
+                  <button className="block w-full text-left px-3 py-2 rounded hover:bg-background">
+                    All Notifications
+                  </button>
+                  <button className="block w-full text-left px-3 py-2 rounded hover:bg-background">
+                    My Wishlist
+                  </button>
+                </div>
+                <div className="p-4">
+                  <Link
+                    href="/auth/logout"
+                    className="block px-3 py-2 rounded hover:bg-background"
+                  >
+                    Logout
+                  </Link>
+                </div>
+              </nav>
+            </CardContent>
+          </Card>
+        </aside>
 
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleLogout}
-                className="text-foreground-muted hover:text-foreground"
-              >
-                <HiLogout className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground font-display">
-            Welcome back, {user.name}!
-          </h1>
-          <p className="text-foreground-muted">
-            Manage your profile and explore our refurbished devices
-          </p>
-        </div>
-
-        {/* KPI row */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <KpiMini
-            label="Orders"
-            value={ordersCount}
-            tone="primary"
-            icon={<HiShoppingCart className="w-5 h-5" />}
-            loading={kpiLoading}
-          />
-          <KpiMini
-            label="Wishlist"
-            value={wishlistCount}
-            tone="secondary"
-            icon={<HiHeart className="w-5 h-5" />}
-            loading={kpiLoading}
-          />
-          <KpiMini
-            label="Reviews"
-            value={reviewsCount}
-            tone="accent"
-            icon={<HiStar className="w-5 h-5" />}
-            loading={kpiLoading}
-          />
-          <KpiMini
-            label="Total Spend"
-            value={totalSpend}
-            format="inr"
-            tone="warning"
-            icon={<HiCurrencyRupee className="w-5 h-5" />}
-            loading={kpiLoading}
-          />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Profile Card */}
+        {/* Content */}
+        <section className="md:col-span-3 space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <HiUser className="w-5 h-5 text-primary" />
-                Profile Information
-              </CardTitle>
+              <CardTitle>Personal Information</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm text-foreground-muted">
+                    First Name
+                  </label>
+                  <Input
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    placeholder="First name"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm text-foreground-muted">
+                    Last Name
+                  </label>
+                  <Input
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    placeholder="Last name"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <div className="text-sm text-foreground-muted mb-1">
+                  Your Gender
+                </div>
+                <div className="flex items-center gap-6">
+                  <label className="inline-flex items-center gap-2 text-sm">
+                    <input
+                      type="radio"
+                      name="gender"
+                      className="accent-primary"
+                      checked={gender === "MALE"}
+                      onChange={() => setGender("MALE")}
+                    />
+                    Male
+                  </label>
+                  <label className="inline-flex items-center gap-2 text-sm">
+                    <input
+                      type="radio"
+                      name="gender"
+                      className="accent-primary"
+                      checked={gender === "FEMALE"}
+                      onChange={() => setGender("FEMALE")}
+                    />
+                    Female
+                  </label>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Email Address</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
+              <Input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="name@example.com"
+              />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Mobile Number</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Input
+                type="tel"
+                value={mobile}
+                onChange={(e) => setMobile(e.target.value)}
+                placeholder="+91xxxxxxxxxx"
+              />
+            </CardContent>
+          </Card>
+
+          <div className="flex justify-end">
+            <Button onClick={onSave} disabled={saving}>
+              {saving ? "Saving…" : "Save Changes"}
+            </Button>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>FAQs</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 text-sm text-foreground-muted">
               <div>
-                <p className="text-sm text-foreground-muted">Name</p>
-                <p className="font-medium">{user.name}</p>
-              </div>
-              <div>
-                <p className="text-sm text-foreground-muted">Email</p>
-                <p className="font-medium">{user.email}</p>
-              </div>
-              {user.phone && (
-                <div>
-                  <p className="text-sm text-foreground-muted">Phone</p>
-                  <p className="font-medium">{user.phone}</p>
+                <div className="font-medium text-foreground">
+                  What happens when I update my email address (or mobile
+                  number)?
                 </div>
-              )}
-              <div>
-                <p className="text-sm text-foreground-muted">Role</p>
-                <p className="font-medium capitalize">
-                  {user.role.toLowerCase()}
+                <p>
+                  Your login email id (or mobile number) changes likewise.
+                  You’ll receive all account related communication on your
+                  updated email address (or mobile number).
                 </p>
               </div>
-              <Button variant="outline" size="sm" className="w-full mt-4">
-                <HiCog className="w-4 h-4" />
-                Edit Profile
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Placeholder column: we can add addresses, payments, or orders next */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Shortcuts</CardTitle>
-            </CardHeader>
-            <CardContent className="grid grid-cols-2 gap-3">
-              <Button variant="outline" size="sm">
-                Track Order
-              </Button>
-              <Button variant="outline" size="sm">
-                Manage Addresses
-              </Button>
-              <Button variant="outline" size="sm">
-                Payment Methods
-              </Button>
-              <Button variant="outline" size="sm">
-                Support
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Recent Activity */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Activity</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-6">
-                <p className="text-foreground-muted">No recent activity</p>
-                <Button variant="outline" size="sm" className="mt-2">
-                  Browse Devices
-                </Button>
+              <div>
+                <div className="font-medium text-foreground">
+                  When will my account be updated with the new email address (or
+                  mobile number)?
+                </div>
+                <p>
+                  As soon as you confirm the verification code sent to your
+                  email (or mobile) and save the changes.
+                </p>
+              </div>
+              <div>
+                <div className="font-medium text-foreground">
+                  What happens to my existing account when I update my email
+                  address (or mobile number)?
+                </div>
+                <p>
+                  Updating your email (or mobile number) doesn’t invalidate your
+                  account. Your account remains fully functional.
+                </p>
               </div>
             </CardContent>
           </Card>
-        </div>
-
-        {/* Coming Soon Section */}
-        <div className="mt-12">
-          <Card>
-            <CardContent className="text-center py-12">
-              <h2 className="text-2xl font-bold text-foreground mb-4 font-display">
-                Device Marketplace Coming Soon!
-              </h2>
-              <p className="text-foreground-muted mb-6 max-w-2xl mx-auto">
-                We're working hard to bring you the best selection of
-                refurbished devices. Stay tuned for smartphones, laptops,
-                tablets, and more at unbeatable prices.
-              </p>
-              <div className="flex flex-wrap justify-center gap-4">
-                <div className="bg-background-secondary px-4 py-2 rounded-lg">
-                  <span className="text-sm font-medium text-foreground">
-                    📱 Smartphones
-                  </span>
-                </div>
-                <div className="bg-background-secondary px-4 py-2 rounded-lg">
-                  <span className="text-sm font-medium text-foreground">
-                    💻 Laptops
-                  </span>
-                </div>
-                <div className="bg-background-secondary px-4 py-2 rounded-lg">
-                  <span className="text-sm font-medium text-foreground">
-                    📱 Tablets
-                  </span>
-                </div>
-                <div className="bg-background-secondary px-4 py-2 rounded-lg">
-                  <span className="text-sm font-medium text-foreground">
-                    🎧 Accessories
-                  </span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </main>
-    </div>
-  );
-}
-
-function KpiMini({
-  label,
-  value,
-  icon,
-  tone = "primary",
-  format,
-  loading,
-}: {
-  label: string;
-  value: number;
-  icon: React.ReactNode;
-  tone?: "primary" | "secondary" | "accent" | "warning";
-  format?: "inr";
-  loading?: boolean;
-}) {
-  const toneClass =
-    tone === "secondary"
-      ? "text-secondary bg-secondary/10"
-      : tone === "accent"
-      ? "text-accent bg-accent/10"
-      : tone === "warning"
-      ? "text-warning bg-warning/10"
-      : "text-primary bg-primary/10";
-
-  const display =
-    format === "inr"
-      ? `₹${Number(value || 0).toLocaleString("en-IN")}`
-      : String(value || 0);
-
-  return (
-    <div className={`p-4 rounded-xl border border-border bg-surface`}>
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm text-foreground-muted">{label}</p>
-          {loading ? (
-            <div className="h-6 w-16 bg-background-secondary rounded mt-2" />
-          ) : (
-            <p className="text-2xl font-bold text-foreground mt-1">{display}</p>
-          )}
-        </div>
-        <div
-          className={`h-10 w-10 rounded-lg grid place-items-center ${toneClass}`}
-        >
-          {icon}
-        </div>
+        </section>
       </div>
     </div>
   );
