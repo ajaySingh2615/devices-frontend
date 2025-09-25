@@ -23,15 +23,16 @@ import {
 } from "@/lib/api";
 
 // Charts
-import {
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-  Tooltip,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-} from "recharts";
+import dynamic from "next/dynamic";
+const SalesTrend = dynamic(
+  () => import("./widgets/SalesTrend").then((m) => m.SalesTrend),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-[280px] bg-background-secondary rounded" />
+    ),
+  }
+);
 import { toast } from "react-hot-toast";
 
 export default function AdminAnalyticsPage() {
@@ -468,86 +469,13 @@ export default function AdminAnalyticsPage() {
           </CardContent>
         </Card>
 
-        {/* Sales Trend */}
+        {/* Sales Trend (lazy widget) */}
         <Card>
           <CardHeader>
             <CardTitle>Sales Trend (Last {selectedPeriod} days)</CardTitle>
           </CardHeader>
           <CardContent>
-            {salesSeries.length > 0 ? (
-              <div className="h-[280px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart
-                    data={salesSeries}
-                    margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
-                  >
-                    <defs>
-                      <linearGradient
-                        id="colorSales"
-                        x1="0"
-                        y1="0"
-                        x2="0"
-                        y2="1"
-                      >
-                        <stop
-                          offset="5%"
-                          stopColor="var(--color-primary)"
-                          stopOpacity={0.4}
-                        />
-                        <stop
-                          offset="95%"
-                          stopColor="var(--color-primary)"
-                          stopOpacity={0.05}
-                        />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid
-                      stroke="var(--color-border)"
-                      strokeDasharray="3 3"
-                    />
-                    <XAxis
-                      dataKey="label"
-                      tick={{
-                        fill: "var(--color-foreground-muted)",
-                        fontSize: 12,
-                      }}
-                    />
-                    <YAxis
-                      tickFormatter={(v) =>
-                        `₹${Number(v).toLocaleString("en-IN")}`
-                      }
-                      tick={{
-                        fill: "var(--color-foreground-muted)",
-                        fontSize: 12,
-                      }}
-                    />
-                    <Tooltip
-                      contentStyle={{
-                        background: "var(--color-surface)",
-                        border: "1px solid var(--color-border)",
-                      }}
-                      formatter={(v: any) => [
-                        `₹${Number(v).toLocaleString("en-IN")}`,
-                        "Sales",
-                      ]}
-                      labelFormatter={(l: any) => `Date: ${l}`}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="sales"
-                      stroke="var(--color-primary)"
-                      fill="url(#colorSales)"
-                      strokeWidth={2}
-                      dot={false}
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            ) : (
-              <div className="text-center py-8 text-foreground-secondary">
-                No sales data for this period
-              </div>
-            )}
+            <SalesTrend data={salesSeries} />
           </CardContent>
         </Card>
       </div>

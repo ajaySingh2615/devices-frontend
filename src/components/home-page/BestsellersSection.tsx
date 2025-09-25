@@ -3,10 +3,18 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { RevealSection } from "@/components/home-page/RevealSection";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import { catalogApi, Product, PageResponse } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/Card";
-import ProductRating from "@/components/rating/ProductRating";
+import dynamic from "next/dynamic";
+const ProductRating = dynamic(
+  () => import("@/components/rating/ProductRating"),
+  {
+    ssr: false,
+    loading: () => <div className="h-3 w-14 bg-background-secondary rounded" />,
+  }
+);
 
 export function BestsellersSection() {
   const [data, setData] = useState<PageResponse<Product> | null>(null);
@@ -179,10 +187,13 @@ export function BestsellersSection() {
                           <Link href={`/products/${p.slug}`} className="block">
                             <div className="relative bg-background-secondary rounded-md flex items-center justify-center h-36 md:h-40 lg:h-44">
                               {p.images?.[0]?.url ? (
-                                <img
+                                <Image
                                   src={p.images[0].url}
                                   alt={p.title}
+                                  width={320}
+                                  height={240}
                                   className="h-full w-auto object-contain"
+                                  priority={false}
                                 />
                               ) : (
                                 <div className="text-4xl">📱</div>

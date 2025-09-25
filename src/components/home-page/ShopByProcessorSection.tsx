@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { RevealSection } from "@/components/home-page/RevealSection";
 import { motion } from "framer-motion";
 
@@ -60,11 +61,13 @@ export function ShopByProcessorSection() {
                   },
                 }}
               >
-                <img
+                <Image
                   src={p.image}
                   alt="processor card"
+                  width={600}
+                  height={400}
                   className="w-full h-auto object-cover"
-                  loading="lazy"
+                  priority={false}
                 />
               </motion.div>
             ))}

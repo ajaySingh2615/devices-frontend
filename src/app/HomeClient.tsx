@@ -2,11 +2,32 @@
 
 import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
-import { catalogApi, Category, Product } from "@/lib/api";
+// removed initial client-side data fetch for faster first paint
 import "./home.css";
 
-// Above-the-fold imports (kept static)
-import { HeroSection } from "@/components/home-page";
+// Above-the-fold: use lightweight static fallback, defer animated hero
+const HeroClient = dynamic(
+  () => import("@/components/home-page/HeroSection").then((m) => m.HeroSection),
+  {
+    ssr: false,
+    loading: () => (
+      <section className="home-hero">
+        <div className="home-container relative">
+          <div className="text-center">
+            <h1 className="home-hero-title">
+              Premium Refurbished{" "}
+              <span className="home-hero-accent">Electronics</span>
+            </h1>
+            <p className="home-hero-sub">
+              Get the latest smartphones, laptops, and tablets at unbeatable
+              prices.
+            </p>
+          </div>
+        </div>
+      </section>
+    ),
+  }
+);
 
 // Below-the-fold sections (lazy)
 const BannerCarousel = dynamic(
@@ -87,36 +108,11 @@ function useParallax() {
 }
 
 export default function HomeClient() {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const [categoriesData, productsData] = await Promise.all([
-          catalogApi.getCategories(),
-          catalogApi.searchProducts({
-            size: 12,
-            sort: "createdAt",
-            direction: "desc",
-          }),
-        ]);
-        setCategories(categoriesData);
-        setFeaturedProducts(productsData.content);
-      } catch (err) {
-        // optional
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
-
   const scrollY = useParallax();
 
   return (
     <div className="min-h-screen bg-background">
-      <HeroSection scrollY={scrollY} />
+      <HeroClient scrollY={scrollY} />
       <BannerCarousel />
       <FeatureSection />
       <ShopByBrandSection />

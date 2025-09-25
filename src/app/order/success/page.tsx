@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { CheckCircle, Package, Truck } from "lucide-react";
 
-export default function OrderSuccessPage() {
+function OrderSuccessInner() {
   const searchParams = useSearchParams();
   const orderId = searchParams.get("orderId");
   const [orderDetails, setOrderDetails] = useState<any>(null);
@@ -94,5 +94,17 @@ export default function OrderSuccessPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function OrderSuccessPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-[40vh] grid place-items-center">Loading…</div>
+      }
+    >
+      <OrderSuccessInner />
+    </Suspense>
   );
 }

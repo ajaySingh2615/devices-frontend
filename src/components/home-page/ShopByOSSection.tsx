@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { RevealSection } from "@/components/home-page/RevealSection";
 import { motion } from "framer-motion";
 
@@ -91,10 +92,13 @@ export function ShopByOSSection() {
                     </div>
                   </div>
                   <div className="shrink-0">
-                    <img
+                    <Image
                       src={card.image}
                       alt={card.title.replace("\n", " ")}
+                      width={180}
+                      height={140}
                       className="h-28 md:h-36 w-auto object-contain"
+                      priority={false}
                     />
                   </div>
                 </div>
@@ -139,10 +143,13 @@ export function ShopByOSSection() {
                       Shop Now
                     </span>
                   </div>
-                  <img
+                  <Image
                     src={card.image}
                     alt={card.title.replace("\n", " ")}
+                    width={160}
+                    height={120}
                     className="h-20 md:h-24 w-auto object-contain"
+                    priority={false}
                   />
                 </div>
               </motion.a>

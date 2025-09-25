@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { RevealSection } from "@/components/home-page/RevealSection";
 import { motion } from "framer-motion";
 
@@ -77,10 +78,13 @@ export function ShopByBrandSection() {
                 className="rounded-xl overflow-hidden hover:shadow-lg transition-shadow duration-300 cursor-pointer"
                 onClick={() => handleBrandClick(brand.slug)}
               >
-                <img
+                <Image
                   src={brand.image}
                   alt={`${brand.name} Brand`}
+                  width={600}
+                  height={400}
                   className="w-full h-auto object-cover"
+                  priority={false}
                 />
               </motion.div>
             ))}
