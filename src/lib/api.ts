@@ -23,6 +23,11 @@ export interface User {
   status: "ACTIVE" | "INACTIVE" | "SUSPENDED" | "DELETED";
   createdAt: string; // ISO 8601 formatted date string
   avatarUrl?: string;
+  firstName?: string;
+  lastName?: string;
+  gender?: "MALE" | "FEMALE" | "UNSPECIFIED";
+  emailVerifiedAt?: string;
+  phoneVerifiedAt?: string;
 }
 
 export interface AuthResponse {
@@ -73,6 +78,9 @@ export interface UpdateProfileRequest {
   name: string;
   phone?: string;
   avatarUrl?: string;
+  firstName?: string;
+  lastName?: string;
+  gender?: "MALE" | "FEMALE" | "UNSPECIFIED";
 }
 
 // Token management
@@ -283,6 +291,31 @@ export const userApi = {
   updateProfile: async (data: UpdateProfileRequest): Promise<User> => {
     const response = await api.patch("/api/v1/users/me", data);
     return response.data;
+  },
+  // verification flows
+  requestEmailChange: async (email: string): Promise<string> => {
+    const res = await api.patch("/api/v1/users/me/email", null, {
+      params: { email },
+    });
+    return res.data;
+  },
+  confirmEmail: async (token: string): Promise<User> => {
+    const res = await api.put("/api/v1/users/me/email/confirm", null, {
+      params: { token },
+    });
+    return res.data;
+  },
+  requestPhoneChange: async (phone: string): Promise<string> => {
+    const res = await api.patch("/api/v1/users/me/phone", null, {
+      params: { phone },
+    });
+    return res.data;
+  },
+  verifyPhone: async (otp: string): Promise<User> => {
+    const res = await api.put("/api/v1/users/me/phone/verify", null, {
+      params: { otp },
+    });
+    return res.data;
   },
 };
 

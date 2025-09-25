@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
+import { toast } from "react-hot-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { userApi, getTokens, clearTokens, User } from "@/lib/api";
@@ -13,6 +14,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [user, setUser] = useState<User | null>(null);
+  const [showSavedModal, setShowSavedModal] = useState(false);
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -21,6 +23,12 @@ export default function DashboardPage() {
   );
   const [email, setEmail] = useState("");
   const [mobile, setMobile] = useState("");
+  const [emailToken, setEmailToken] = useState("");
+  const [phoneOtp, setPhoneOtp] = useState("");
+  const formatIst = (iso?: string) =>
+    iso
+      ? new Date(iso).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })
+      : "";
 
   useEffect(() => {
     (async () => {
@@ -37,6 +45,7 @@ export default function DashboardPage() {
         setLastName(parts.slice(1).join(" ") || "");
         setEmail(u.email || "");
         setMobile(u.phone || "");
+        if (u.gender) setGender(u.gender as any);
       } catch {
         clearTokens();
         router.push("/auth/login");
@@ -50,10 +59,29 @@ export default function DashboardPage() {
     if (!user) return;
     try {
       setSaving(true);
-      await userApi.updateProfile({
+      const payload = {
         name: [firstName, lastName].filter(Boolean).join(" "),
         phone: mobile || undefined,
-      });
+        firstName,
+        lastName,
+        gender,
+      } as const;
+      await userApi.updateProfile(payload);
+      // reflect changes locally
+      setUser((prev) =>
+        prev
+          ? {
+              ...prev,
+              name: payload.name,
+              phone: payload.phone,
+              firstName,
+              lastName,
+              gender,
+            }
+          : prev
+      );
+      toast.success("Profile updated");
+      setShowSavedModal(true);
     } finally {
       setSaving(false);
     }
@@ -215,29 +243,151 @@ export default function DashboardPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Email Address</CardTitle>
+              <div className="flex items-center justify-between gap-3">
+                <CardTitle>Email Address</CardTitle>
+                {user?.emailVerifiedAt ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-green-50 text-green-700 border border-green-200 px-2 py-0.5 text-xs">
+                    Verified
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 text-xs">
+                    Unverified
+                  </span>
+                )}
+              </div>
             </CardHeader>
             <CardContent className="space-y-3">
-              <Input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="name@example.com"
-              />
+              <div className="flex items-center gap-3">
+                <Input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="name@example.com"
+                />
+                <Button
+                  variant="outline"
+                  onClick={async () => {
+                    try {
+                      const token = await userApi.requestEmailChange(email);
+                      setEmailToken(token);
+                      toast.success("Verification link sent");
+                    } catch {
+                      toast.error("Failed to send verification");
+                    }
+                  }}
+                >
+                  Verify
+                </Button>
+              </div>
+              {user?.emailVerifiedAt && (
+                <div className="text-xs text-foreground-muted">
+                  Verified on {formatIst(user.emailVerifiedAt)}
+                </div>
+              )}
+              {emailToken && (
+                <div className="flex items-center gap-2">
+                  <Input
+                    value={emailToken}
+                    onChange={(e) => setEmailToken(e.target.value)}
+                    placeholder="Enter token"
+                  />
+                  <Button
+                    onClick={async () => {
+                      try {
+                        const updated = await userApi.confirmEmail(emailToken);
+                        setUser(updated);
+                        setEmail(updated.email || "");
+                        setEmailToken("");
+                        toast.success("Email verified");
+                      } catch {
+                        toast.error("Invalid token");
+                      }
+                    }}
+                  >
+                    Confirm
+                  </Button>
+                </div>
+              )}
+              {!user?.emailVerifiedAt && !emailToken && (
+                <div className="text-xs text-foreground-muted">
+                  Not verified. Click Verify to receive a code.
+                </div>
+              )}
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle>Mobile Number</CardTitle>
+              <div className="flex items-center justify-between gap-3">
+                <CardTitle>Mobile Number</CardTitle>
+                {user?.phoneVerifiedAt ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-green-50 text-green-700 border border-green-200 px-2 py-0.5 text-xs">
+                    Verified
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 text-xs">
+                    Unverified
+                  </span>
+                )}
+              </div>
             </CardHeader>
             <CardContent className="space-y-3">
-              <Input
-                type="tel"
-                value={mobile}
-                onChange={(e) => setMobile(e.target.value)}
-                placeholder="+91xxxxxxxxxx"
-              />
+              <div className="flex items-center gap-3">
+                <Input
+                  type="tel"
+                  value={mobile}
+                  onChange={(e) => setMobile(e.target.value)}
+                  placeholder="+91xxxxxxxxxx"
+                />
+                <Button
+                  variant="outline"
+                  onClick={async () => {
+                    try {
+                      const otp = await userApi.requestPhoneChange(mobile);
+                      setPhoneOtp(otp);
+                      toast.success("OTP sent");
+                    } catch {
+                      toast.error("Failed to send OTP");
+                    }
+                  }}
+                >
+                  Send OTP
+                </Button>
+              </div>
+              {user?.phoneVerifiedAt && (
+                <div className="text-xs text-foreground-muted">
+                  Verified on {formatIst(user.phoneVerifiedAt)}
+                </div>
+              )}
+              {phoneOtp && (
+                <div className="flex items-center gap-2">
+                  <Input
+                    value={phoneOtp}
+                    onChange={(e) => setPhoneOtp(e.target.value)}
+                    placeholder="Enter OTP"
+                  />
+                  <Button
+                    onClick={async () => {
+                      try {
+                        const updated = await userApi.verifyPhone(phoneOtp);
+                        setUser(updated);
+                        setMobile(updated.phone || "");
+                        setPhoneOtp("");
+                        toast.success("Phone verified");
+                      } catch {
+                        toast.error("Invalid OTP");
+                      }
+                    }}
+                  >
+                    Verify
+                  </Button>
+                </div>
+              )}
+              {!user?.phoneVerifiedAt && !phoneOtp && (
+                <div className="text-xs text-foreground-muted">
+                  Not verified. Click Send OTP to receive a code.
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -287,6 +437,44 @@ export default function DashboardPage() {
           </Card>
         </section>
       </div>
+      {/* Success Modal */}
+      {showSavedModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white w-full max-w-md rounded-lg shadow-lg p-6">
+            <div className="text-center">
+              <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-4">
+                <svg
+                  className="h-8 w-8 text-green-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Profile updated
+              </h3>
+              <p className="text-sm text-gray-600 mb-6">
+                Your personal information has been saved successfully.
+              </p>
+              <div className="flex gap-3 justify-center">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowSavedModal(false)}
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
