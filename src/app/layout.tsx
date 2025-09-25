@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Plus_Jakarta_Sans, JetBrains_Mono } from "next/font/google";
 import { Toaster } from "react-hot-toast";
 import Navigation from "@/components/layout/Navigation";
+import { VerificationBanner } from "@/components/layout/VerificationBanner";
 import { AuthProvider } from "@/hooks/useAuth";
 import "./globals.css";
 import "./home.css";
@@ -49,6 +50,7 @@ export default function RootLayout({
       >
         <AuthProvider>
           <Navigation />
+          <VerificationBanner />
           {children}
           <Toaster
             position="top-right"

@@ -28,6 +28,8 @@ export interface User {
   gender?: "MALE" | "FEMALE" | "UNSPECIFIED";
   emailVerifiedAt?: string;
   phoneVerifiedAt?: string;
+  googleSub?: string;
+  hasPassword?: boolean;
 }
 
 export interface AuthResponse {

@@ -57,7 +57,7 @@ export default function RegisterPage() {
     isLoading: googleLoading,
     isGoogleLoaded,
   } = useGoogleAuth({
-    onSuccess: () => router.push("/dashboard"),
+    onSuccess: () => router.push("/products"),
     onError: (error) => toast.error(error),
   });
 
@@ -95,7 +95,7 @@ export default function RegisterPage() {
       });
       setTokens(response.accessToken, response.refreshToken);
       toast.success("Account created successfully!");
-      router.push("/dashboard");
+      router.push("/products");
     } catch (error) {
       console.error("Registration failed:", error);
     } finally {
@@ -137,7 +137,7 @@ export default function RegisterPage() {
       });
       setTokens(response.accessToken, response.refreshToken);
       toast.success("Account created successfully!");
-      router.push("/dashboard");
+      router.push("/products");
     } catch (error: any) {
       console.error("Phone verification failed:", error);
 

@@ -266,19 +266,29 @@ export default function DashboardPage() {
                 />
                 <Button
                   variant="outline"
+                  disabled={!!user?.googleSub && !user?.hasPassword}
                   onClick={async () => {
                     try {
                       const token = await userApi.requestEmailChange(email);
                       setEmailToken(token);
                       toast.success("Verification link sent");
-                    } catch {
-                      toast.error("Failed to send verification");
+                    } catch (e: any) {
+                      const msg =
+                        e?.response?.data?.message ||
+                        e?.message ||
+                        "Failed to send verification";
+                      toast.error(msg);
                     }
                   }}
                 >
                   Verify
                 </Button>
               </div>
+              {!!user?.googleSub && !user?.hasPassword && (
+                <div className="text-xs text-foreground-muted">
+                  Email is managed by Google for this account.
+                </div>
+              )}
               {user?.emailVerifiedAt && (
                 <div className="text-xs text-foreground-muted">
                   Verified on {formatIst(user.emailVerifiedAt)}
@@ -299,8 +309,12 @@ export default function DashboardPage() {
                         setEmail(updated.email || "");
                         setEmailToken("");
                         toast.success("Email verified");
-                      } catch {
-                        toast.error("Invalid token");
+                      } catch (e: any) {
+                        const msg =
+                          e?.response?.data?.message ||
+                          e?.message ||
+                          "Invalid token";
+                        toast.error(msg);
                       }
                     }}
                   >
@@ -346,8 +360,12 @@ export default function DashboardPage() {
                       const otp = await userApi.requestPhoneChange(mobile);
                       setPhoneOtp(otp);
                       toast.success("OTP sent");
-                    } catch {
-                      toast.error("Failed to send OTP");
+                    } catch (e: any) {
+                      const msg =
+                        e?.response?.data?.message ||
+                        e?.message ||
+                        "Failed to send OTP";
+                      toast.error(msg);
                     }
                   }}
                 >
@@ -374,8 +392,12 @@ export default function DashboardPage() {
                         setMobile(updated.phone || "");
                         setPhoneOtp("");
                         toast.success("Phone verified");
-                      } catch {
-                        toast.error("Invalid OTP");
+                      } catch (e: any) {
+                        const msg =
+                          e?.response?.data?.message ||
+                          e?.message ||
+                          "Invalid OTP";
+                        toast.error(msg);
                       }
                     }}
                   >

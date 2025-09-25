@@ -54,7 +54,7 @@ export default function LoginPage() {
     isLoading: googleLoading,
     isGoogleLoaded,
   } = useGoogleAuth({
-    onSuccess: () => router.push("/dashboard"),
+    onSuccess: () => router.push("/products"),
     onError: (error) => toast.error(error),
   });
 
@@ -82,7 +82,7 @@ export default function LoginPage() {
       const response = await authApi.login(data);
       setTokens(response.accessToken, response.refreshToken);
       toast.success("Welcome back!");
-      router.push("/dashboard");
+      router.push("/products");
     } catch (error) {
       console.error("Login failed:", error);
     } finally {
@@ -124,7 +124,7 @@ export default function LoginPage() {
       });
       setTokens(response.accessToken, response.refreshToken);
       toast.success("Welcome! Login successful.");
-      router.push("/dashboard");
+      router.push("/products");
     } catch (error: any) {
       console.error("Phone verification failed:", error);
 
